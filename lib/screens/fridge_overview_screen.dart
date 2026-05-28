@@ -15,6 +15,8 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   static final FridgeItemService _service = FridgeItemService();
 
+  String get _itemsPath => 'users/$userId/fridges/default/items';
+
   void _goToAddItem(BuildContext context) {
     Navigator.push(
       context,
@@ -70,7 +72,9 @@ class FridgeOverviewScreen extends StatelessWidget {
         return 'Firestore databasen findes ikke. Opret database (default) i Firebase Console.';
       }
       if (error.code == 'permission-denied') {
-        return 'Ingen adgang til Firestore. Tjek security rules for den indloggede bruger.';
+        return 'Ingen adgang til Firestore.\n\n'
+            'Tjek at security rules bruger request.auth.uid == userId, '
+            'og at data ligger under:\n$_itemsPath';
       }
       return 'Firebase fejl (${error.code}): ${error.message ?? error}';
     }
@@ -112,13 +116,24 @@ class FridgeOverviewScreen extends StatelessWidget {
           final items = snapshot.data?.docs ?? [];
 
           if (items.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Dit køleskab er tomt - tilføj din første vare',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18),
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'Dit køleskab er tomt - tilføj din første vare',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18),
+                    ),
+                    const SizedBox(height: 16),
+                    SelectableText(
+                      'Appen læser fra:\n$_itemsPath',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
                 ),
               ),
             );
