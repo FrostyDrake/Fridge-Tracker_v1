@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1038146272174",
+    "project_id": "fridge-tracker-9bd57",
+    "storage_bucket": "fridge-tracker-9bd57.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1038146272174:android:34d81ebcf11211f886663f",
+        "android_client_info": {
+          "package_name": "com.example.fridge_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6JZJ6WDifddIIMuiGxkRnMwg9uZiNGks"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
