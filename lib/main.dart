@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import 'firebase_options.dart';
+import 'screens/fridge_overview_screen.dart';
 import 'screens/login_screen.dart';
 
 void main() {
@@ -19,9 +21,11 @@ class MyApp extends StatelessWidget {
   MyApp({
     super.key,
     Future<void>? firebaseInitialization,
+    this.authStateChanges,
   }) : firebaseInitialization = firebaseInitialization ?? _initializeFirebase();
 
   final Future<void> firebaseInitialization;
+  final Stream<User?>? authStateChanges;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +38,7 @@ class MyApp extends StatelessWidget {
       ),
       home: AppStartup(
         firebaseInitialization: firebaseInitialization,
+        authStateChanges: authStateChanges,
       ),
     );
   }
@@ -43,9 +48,11 @@ class AppStartup extends StatelessWidget {
   const AppStartup({
     super.key,
     required this.firebaseInitialization,
+    this.authStateChanges,
   });
 
   final Future<void> firebaseInitialization;
+  final Stream<User?>? authStateChanges;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +83,40 @@ class AppStartup extends StatelessWidget {
           );
         }
 
-        return const LoginScreen();
+        return AuthGate(
+          authStateChanges:
+              authStateChanges ?? FirebaseAuth.instance.authStateChanges(),
+        );
+      },
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({
+    super.key,
+    required this.authStateChanges,
+  });
+
+  final Stream<User?> authStateChanges;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: authStateChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final user = snapshot.data;
+        if (user == null) {
+          return const LoginScreen();
+        }
+
+        return FridgeOverviewScreen(userId: user.uid);
       },
     );
   }

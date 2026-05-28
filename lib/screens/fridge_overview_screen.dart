@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -25,6 +26,10 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   Future<void> _deleteItem(String itemId) {
     return _service.deleteItem(userId: userId, itemId: itemId);
+  }
+
+  Future<void> _signOut() {
+    return FirebaseAuth.instance.signOut();
   }
 
   DateTime? _readExpiryDate(Map<String, dynamic> data) {
@@ -65,7 +70,7 @@ class FridgeOverviewScreen extends StatelessWidget {
         return 'Firestore databasen findes ikke. Opret database (default) i Firebase Console.';
       }
       if (error.code == 'permission-denied') {
-        return 'Ingen adgang til Firestore. Tjek security rules for test-user.';
+        return 'Ingen adgang til Firestore. Tjek security rules for den indloggede bruger.';
       }
       return 'Firebase fejl (${error.code}): ${error.message ?? error}';
     }
@@ -77,6 +82,13 @@ class FridgeOverviewScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mit køleskab'),
+        actions: [
+          IconButton(
+            onPressed: _signOut,
+            tooltip: 'Log ud',
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: _service.watchItems(userId),

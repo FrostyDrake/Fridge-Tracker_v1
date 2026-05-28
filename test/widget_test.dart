@@ -4,8 +4,13 @@ import 'package:fridge_tracker/main.dart';
 
 void main() {
   testWidgets('shows login screen', (WidgetTester tester) async {
-    await tester.pumpWidget(MyApp(firebaseInitialization: Future.value()));
-    await tester.pump();
+    await tester.pumpWidget(
+      MyApp(
+        firebaseInitialization: Future.value(),
+        authStateChanges: Stream.value(null),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     expect(find.text('Fridge Tracker'), findsOneWidget);
     expect(find.text('Email'), findsOneWidget);

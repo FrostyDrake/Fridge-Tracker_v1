@@ -95,7 +95,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
       return 'Firestore databasen findes ikke. Opret database (default) i Firebase Console.';
     }
     if (error.code == 'permission-denied') {
-      return 'Ingen adgang til Firestore. Tjek security rules for test-user.';
+      return 'Ingen adgang til Firestore. Tjek security rules for den indloggede bruger.';
     }
     return 'Firebase fejl (${error.code}): ${error.message ?? error}';
   }
@@ -125,7 +125,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tilfoj vare'),
+        title: const Text('Tilføj vare'),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -157,7 +157,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
                   controller: _expiryDateController,
                   keyboardType: TextInputType.datetime,
                   decoration: const InputDecoration(
-                    labelText: 'Udlobsdato',
+                    labelText: 'Udløbsdato',
                     hintText: 'fx 2026-06-01',
                     border: OutlineInputBorder(),
                   ),
