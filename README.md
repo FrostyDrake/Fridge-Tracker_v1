@@ -1,58 +1,59 @@
 # Fridge Tracker
 
-Fridge Tracker is a Flutter mobile app that helps users reduce food waste by
-keeping a live overview of what is in their fridge, when items expire, and what
-should be used first.
+Fridge Tracker er en Flutter-mobilapp, der hjælper brugere med at reducere
+madspild ved at give et løbende overblik over, hvad der ligger i køleskabet,
+hvornår varerne udløber, og hvad der bør bruges først.
 
-The app is aimed primarily at students and young adults who have limited food
-budgets, busy routines, and are comfortable using mobile apps. It also supports
-families who shop for many items at once and need a simple overview.
+Appen henvender sig primært til studerende og unge voksne med begrænset
+madbudget, travl hverdag og stor erfaring med apps. Den kan også bruges af
+familier, der handler ind til flere dage ad gangen og har brug for et enkelt
+overblik.
 
-## Core Idea
+## Kerneidé
 
-Users can add fridge items manually in Sprint 1. Later, the app will support
-camera scanning, barcode lookup through Open Food Facts, intelligent default
-expiry dates, expiry notifications, and recipe suggestions.
+I Sprint 1 kan brugeren tilføje varer manuelt. Senere skal appen understøtte
+kamerascanning, stregkodeopslag via Open Food Facts, intelligente
+standardudløbsdatoer, udløbsnotifikationer og opskriftsforslag.
 
 ## Team
 
-| Name | Scrum role | Technical responsibility |
-| ---- | ---------- | ------------------------ |
+| Navn | Scrum-rolle | Teknisk ansvar |
+| ---- | ----------- | -------------- |
 | Andrei | Scrum Master | Backend, Firebase Auth, FCM |
-| Azad | Product Owner | Flutter frontend, ML Kit |
-| Dylan | Developer | Firestore database, data model |
+| Azad | Product Owner | Flutter-frontend, ML Kit |
+| Dylan | Developer | Firestore-database, datamodel |
 
-## Technology Stack
+## Teknologistack
 
-| Layer | Technology | Reason |
-| ----- | ---------- | ------ |
-| App | Flutter / Dart | Cross-platform Android and iOS app |
-| Database | Firebase Firestore | Realtime sync and offline cache |
-| Auth | Firebase Authentication | Secure email/password login |
-| Push notifications | Firebase Cloud Messaging | Push notifications for Android and iOS |
-| Image recognition | ML Kit on-device | Object recognition without network dependency |
-| Product data | Open Food Facts API | Free product database with grocery products |
-| Default expiry dates | Local JSON database | Fast lookup for common food expiry defaults |
-| Version control | GitHub | Feature branches and pull requests |
+| Lag | Teknologi | Begrundelse |
+| --- | --------- | ----------- |
+| App | Flutter / Dart | Crossplatform-app til Android og iOS |
+| Database | Firebase Firestore | Realtidssynkronisering og offline cache |
+| Auth | Firebase Authentication | Sikker login med email/adgangskode |
+| Push-notifikationer | Firebase Cloud Messaging | Push-notifikationer til Android og iOS |
+| Billedgenkendelse | ML Kit on-device | Objektgenkendelse uden netværkskrav |
+| Produktdata | Open Food Facts API | Gratis produktdatabase med dagligvarer |
+| Standardudløbsdatoer | Lokal JSON-database | Hurtigt opslag for almindelige fødevarer |
+| Versionsstyring | GitHub | Feature branches og pull requests |
 
-Sprint 1 uses Flutter directly against Firebase through the Firebase SDK. A
-separate Node.js/Express backend should only be added if a later sprint creates
-a real need for it.
+I Sprint 1 kommunikerer Flutter direkte med Firestore via Firebase SDK. En
+separat Node.js/Express-backend tilføjes kun, hvis et senere sprint skaber et
+reelt behov for det.
 
-## Sprint 1 Goal
+## Sprint 1-mål
 
-Build a working authentication flow and a basic fridge overview with CRUD.
+Byg et fungerende login-flow og en grundlæggende køleskabsoversigt med CRUD.
 
 Sprint 1 user stories:
 
-| User story | Points | Main tasks |
-| ---------- | ------ | ---------- |
-| US04 - Login | 5 | Firebase setup, auth flow, validation, security rules |
-| US02 - Overview | 3 | Firestore data model, ListView UI, color coding, realtime updates |
-| US05 - Manual add | 3 | Form screen, Firestore write, navigation flow |
-| US08 - Delete item | 2 | Swipe-to-delete, Firestore delete, 5 second undo |
+| User story | Points | Nøgleopgaver |
+| ---------- | ------ | ------------ |
+| US04 - Login | 5 | Firebase-opsætning, auth-flow, validering, security rules |
+| US02 - Oversigt | 3 | Firestore-datamodel, ListView UI, farvekodning, realtid |
+| US05 - Manuel tilføjelse | 3 | Formular-screen, Firestore-skrivning, navigation |
+| US08 - Slet vare | 2 | Swipe-to-delete, Firestore delete, 5 sekunders fortryd |
 
-## Data Model
+## Datamodel
 
 ```text
 User
@@ -67,19 +68,18 @@ User
         └── imageUrl
 ```
 
-The structure should support a later shared fridge feature without requiring a
-full rewrite.
+Strukturen skal kunne understøtte et senere "delt køleskab" uden en fuld
+omskrivning.
 
-## Expiry Status Colors
+## Farvekodning for udløb
 
-| Color | Meaning |
-| ----- | ------- |
-| Red | Expires in 1-2 days |
-| Yellow | Expires in 3-5 days |
-| Green | More than 5 days left |
+| Farve | Betydning |
+| ----- | --------- |
+| Rød | Udløber om 1-2 dage |
+| Gul | Udløber om 3-5 dage |
+| Grøn | Mere end 5 dage tilbage |
 
-## Documentation
+## Dokumentation
 
-- [Project overview](docs/project-overview.md)
-- [Sprint 1 backlog](docs/sprint-1.md)
-- [GitHub permissions guide](docs/github-permissions.md)
+- [Projektoverblik](docs/project-overview.md)
+- [Sprint 1-backlog](docs/sprint-1.md)

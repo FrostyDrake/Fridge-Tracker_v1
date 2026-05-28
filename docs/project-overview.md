@@ -1,114 +1,114 @@
-# Project Overview
+# Projektoverblik
 
-## What Is Fridge Tracker?
+## Hvad er Fridge Tracker?
 
-Fridge Tracker is a mobile application that helps users reduce food waste by
-giving them a live overview of the contents of their fridge. Users can scan
-products with the camera, confirm detected items, and store them with an
-intelligent expiry date.
+Fridge Tracker er en mobilapplikation, der hjælper brugere med at reducere
+madspild ved at give et løbende overblik over køleskabets indhold. Brugeren kan
+scanne varer med kameraet, bekræfte det fundne produkt og gemme varen med en
+intelligent udløbsdato.
 
-The app sends notifications when items are close to expiry and can later suggest
-recipes based on the items that should be used first.
+Appen sender notifikationer, når varer nærmer sig udløb, og kan senere foreslå
+opskrifter baseret på de varer, der bør bruges først.
 
 ## Problem
 
-Many households throw food away because they lose track of what they own and
-when it expires. Existing solutions often require too much manual registration.
-Fridge Tracker reduces that effort by using camera scanning, barcode lookup, and
-default expiry dates.
+Mange husholdninger smider mad ud, fordi de mister overblikket over, hvad de
+har, og hvornår det udløber. Eksisterende løsninger kræver ofte for meget manuel
+registrering. Fridge Tracker reducerer brugerindsatsen med kamerascanning,
+stregkodeopslag og standardudløbsdatoer.
 
-## Target Group
+## Målgruppe
 
-Primary target group:
+Primær målgruppe:
 
-- Students and young adults aged 18-30
-- People living alone or in shared housing
-- Users with limited food budgets and busy routines
+- Studerende og unge voksne i alderen 18-30 år
+- Personer der bor alene eller i kollektiv
+- Brugere med begrænset madbudget og travl hverdag
 
-Secondary target group:
+Sekundær målgruppe:
 
-- Families that shop for a full week at a time
-- Households with many fridge items to track
+- Familier der handler ind til en hel uge ad gangen
+- Husholdninger med mange køleskabsvarer at holde styr på
 
-## Architecture
+## Arkitektur
 
 ```text
 Flutter App
 ├── Firebase Auth - login/logout
-├── Firebase Firestore - read/write fridge data
-├── Firebase Cloud Messaging - push notifications
-├── ML Kit on-device - image recognition
-└── Open Food Facts API - product name and category
+├── Firebase Firestore - læs/skriv køleskabsdata
+├── Firebase Cloud Messaging - push-notifikationer
+├── ML Kit on-device - billedgenkendelse
+└── Open Food Facts API - produktnavn og kategori
 ```
 
-Important decision for Sprint 1:
+Vigtig beslutning for Sprint 1:
 
-Flutter communicates directly with Firestore through the Firebase SDK. No
-separate backend is planned for Sprint 1.
+Flutter kommunikerer direkte med Firestore via Firebase SDK. Der er ikke planlagt
+en separat backend i Sprint 1.
 
-## Scan Flow
+## Scan-flow
 
-1. User opens the camera in the app.
-2. ML Kit tries visual object recognition.
-3. If a barcode is detected, the app calls the Open Food Facts API.
-4. Product name and category are returned.
-5. The app looks up a default expiry time in the local JSON database.
-6. User confirms or adjusts the expiry date.
-7. Item is added to Firestore.
+1. Brugeren åbner kameraet i appen.
+2. ML Kit forsøger visuel objektgenkendelse.
+3. Hvis en stregkode detekteres, kalder appen Open Food Facts API.
+4. Produktnavn og kategori returneres.
+5. Appen slår standardudløbstid op i den lokale JSON-database.
+6. Brugeren bekræfter eller justerer udløbsdatoen.
+7. Varen tilføjes til Firestore.
 
-## MoSCoW Prioritization
+## MoSCoW-prioritering
 
 ### Must Have
 
-- Camera scan with automatic item recognition
-- Automatic expiry date from local JSON database
-- Manual item creation
-- Fridge overview with expiry color coding
-- Push notification when an item expires within 2 days
-- Local data persistence between sessions
-- Secure login and account creation
+- Kamerascan med automatisk varegenkendelse
+- Automatisk udløbsdato fra lokal JSON-database
+- Manuel tilføjelse af vare
+- Køleskabsoversigt med farvekodning
+- Push-notifikation når en vare udløber inden for 2 dage
+- Lokal datalagring mellem sessioner
+- Sikker login og oprettelse af konto
 
 ### Should Have
 
-- Item categories
-- Sorting by expiry date
-- Edit existing item
-- Recipe suggestions through an external API
-- Cloud backup and synchronization
+- Kategorisering af varer
+- Sortering efter udløbsdato
+- Redigering af eksisterende vare
+- Opskriftsforslag via eksternt API
+- Cloud-backup og synkronisering
 
 ### Could Have
 
-- Shared fridge with household members
-- Food waste statistics over time
-- Shopping list based on items that are nearly missing
-- Filtering by category or expiry status
-- AI-based meal plans
+- Delt køleskab med husstandsmedlemmer
+- Madspildsstatistik over tid
+- Indkøbsliste baseret på varer der snart mangler
+- Filtrering efter kategori eller udløbsstatus
+- AI-baserede madplaner
 
-### Won't Have This Time
+### Won't Have denne gang
 
-- Smart fridge IoT integration
-- Social feed or sharing recipes with friends
+- Smart køleskab IoT-integration
+- Socialt feed eller deling af opskrifter med venner
 
 ## Product Backlog
 
-| ID | User story | Priority | Points |
-| -- | ---------- | -------- | ------ |
-| US01 | As a user, I want to scan an item with the camera so it is automatically added | Must | 8 |
-| US02 | As a user, I want to see all fridge items in one overview | Must | 3 |
-| US03 | As a user, I want to receive a notification when an item expires within 2 days | Must | 5 |
-| US04 | As a user, I want to create an account and log in securely | Must | 5 |
-| US05 | As a user, I want to manually add an item with name and expiry date | Should | 3 |
-| US06 | As a user, I want to see items sorted by expiry date | Should | 2 |
-| US07 | As a user, I want recipe suggestions based on items that expire soon | Should | 8 |
-| US08 | As a user, I want to delete an item from the fridge | Should | 2 |
-| US09 | As a user, I want to share my fridge with household members | Could | 8 |
-| US10 | As a user, I want to see food waste statistics over time | Could | 5 |
+| ID | User story | Prioritet | Points |
+| -- | ---------- | --------- | ------ |
+| US01 | Som bruger vil jeg scanne en vare med kameraet, så den automatisk tilføjes | Must | 8 |
+| US02 | Som bruger vil jeg se alle varer i køleskabet i én oversigt | Must | 3 |
+| US03 | Som bruger vil jeg modtage en notifikation, når en vare udløber inden for 2 dage | Must | 5 |
+| US04 | Som bruger vil jeg oprette en konto og logge ind sikkert | Must | 5 |
+| US05 | Som bruger vil jeg manuelt tilføje en vare med navn og udløbsdato | Should | 3 |
+| US06 | Som bruger vil jeg se varer sorteret efter udløbsdato | Should | 2 |
+| US07 | Som bruger vil jeg få opskriftsforslag baseret på varer, der snart udløber | Should | 8 |
+| US08 | Som bruger vil jeg slette en vare fra køleskabet | Should | 2 |
+| US09 | Som bruger vil jeg dele mit køleskab med mine husstandsmedlemmer | Could | 8 |
+| US10 | Som bruger vil jeg se statistik over mit madspild over tid | Could | 5 |
 
-## Technical Risks
+## Tekniske risici
 
-| Risk | Problem | Mitigation |
-| ---- | ------- | ---------- |
-| Firestore security rules | Misconfiguration can expose user data | Write and test rules from day one |
-| Sprint 1 dependencies | Overview, add, and delete depend on auth | Set Firebase up together on day one and build UI in parallel |
-| Image recognition | ML Kit may fail on unknown or generic items | Always provide manual fallback |
-| Date format | Inconsistent dates can break sorting and notifications | Standardize on ISO 8601 or Firestore Timestamp |
+| Risiko | Problem | Reduktion |
+| ------ | ------- | --------- |
+| Firestore security rules | Fejlkonfiguration kan eksponere brugerdata | Skriv og test rules fra dag ét |
+| Sprint 1-afhængigheder | Oversigt, tilføjelse og sletning afhænger af auth | Sæt Firebase op sammen dag ét, og byg UI parallelt |
+| Billedgenkendelse | ML Kit kan fejle på ukendte eller generiske varer | Tilbyd altid manuel indtastning som fallback |
+| Datoformat | Inkonsistente datoer kan ødelægge sortering og notifikationer | Standardiser på ISO 8601 eller Firestore Timestamp |

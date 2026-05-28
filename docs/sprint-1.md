@@ -1,81 +1,81 @@
 # Sprint 1
 
-## Sprint Goal
+## Sprintmål
 
-Build working Firebase authentication and a basic fridge overview with create,
-read, and delete functionality.
+Byg fungerende Firebase Authentication og en grundlæggende køleskabsoversigt med
+oprettelse, læsning og sletning af varer.
 
 ## Sprint Backlog
 
-| User story | Points | Key tasks | Owner |
-| ---------- | ------ | --------- | ----- |
-| US04 - Login | 5 | Firebase setup, auth flow, validation, security rules | Andrei + Dylan |
-| US02 - Overview | 3 | Firestore data model, ListView UI, color coding, realtime updates | Dylan + Azad |
-| US05 - Manual add | 3 | Form screen, Firestore write, navigation flow | Azad + Dylan |
-| US08 - Delete item | 2 | Swipe-to-delete, Firestore delete, 5 second undo | Azad |
+| User story | Points | Nøgleopgaver | Ansvarlig |
+| ---------- | ------ | ------------ | --------- |
+| US04 - Login | 5 | Firebase-opsætning, auth-flow, validering, security rules | Andrei + Dylan |
+| US02 - Oversigt | 3 | Firestore-datamodel, ListView UI, farvekodning, realtidsopdatering | Dylan + Azad |
+| US05 - Manuel tilføjelse | 3 | Formular-screen, Firestore-skrivning, navigation | Azad + Dylan |
+| US08 - Slet vare | 2 | Swipe-to-delete, Firestore delete, 5 sekunders fortryd | Azad |
 
 Total: 13 story points.
 
-## Functional Requirements
+## Funktionelle krav
 
-| ID | Requirement |
-| -- | ----------- |
-| FK01 | The system must allow users to create an account with email/password and log in/out with validation and error messages |
-| FK02 | The system must show all items with name, category, and expiry date, color-coded by expiry status |
-| FK03 | The system must allow manual item creation through a form; empty fields are not accepted |
-| FK04 | The system must allow item deletion with a 5 second undo option |
-| FK05 | The system must send a push notification with item name and expiry date when an item expires within 2 days |
+| ID | Krav |
+| -- | ---- |
+| FK01 | Systemet skal give mulighed for at oprette konto med email/adgangskode samt logge ind og ud med validering og fejlbeskeder |
+| FK02 | Systemet skal vise alle varer med navn, kategori og udløbsdato, farvekodet efter udløbsstatus |
+| FK03 | Systemet skal give mulighed for manuel tilføjelse via formular; tomme felter accepteres ikke |
+| FK04 | Systemet skal give mulighed for sletning af vare med 5 sekunders fortrydmulighed |
+| FK05 | Systemet skal sende push-notifikation med varenavn og udløbsdato, når en vare udløber inden for 2 dage |
 
-## Non-Functional Requirements
+## Ikke-funktionelle krav
 
-| ID | Category | Requirement |
-| -- | -------- | ----------- |
-| IFK01 | Security | Use HTTPS, Firestore security rules, and never store passwords in plain text |
-| IFK02 | Performance | Overview loads within 2 seconds and works offline with cached data |
-| IFK03 | Usability | First item can be added within 60 seconds after account creation; WCAG 2.1 AA is followed |
-| IFK04 | Scalability | Data model supports shared fridges without rewriting the existing structure |
-| IFK05 | Compatibility | Works on Android API 26+ and iOS 13+ without functional differences |
+| ID | Kategori | Krav |
+| -- | -------- | ---- |
+| IFK01 | Sikkerhed | Brug HTTPS, Firestore security rules, og gem aldrig adgangskoder i klartekst |
+| IFK02 | Performance | Oversigten indlæses inden for 2 sekunder og fungerer offline med cachede data |
+| IFK03 | Brugervenlighed | Første vare kan tilføjes inden for 60 sekunder efter kontooprettelse; WCAG 2.1 AA følges |
+| IFK04 | Skalerbarhed | Datamodellen understøtter delt køleskab uden omskrivning af eksisterende struktur |
+| IFK05 | Platformskompatibilitet | Appen fungerer på Android API 26+ og iOS 13+ uden funktionelle forskelle |
 
-## Acceptance Criteria
+## Acceptkriterier
 
 ### US04 - Login
 
-- Valid email and password creates an account and sends the user to the overview.
-- Invalid email shows "Ugyldig emailadresse".
-- Password shorter than 6 characters shows an error message.
-- Existing email shows "Denne email er allerede i brug".
-- Login with an existing account shows the user's own data.
-- Logout prevents access to data until the user logs in again.
+- Gyldig email og adgangskode opretter en konto og sender brugeren til oversigten.
+- Ugyldig email viser "Ugyldig emailadresse".
+- Adgangskode under 6 tegn viser en fejlbesked.
+- Eksisterende email viser "Denne email er allerede i brug".
+- Login med eksisterende konto viser brugerens egne data.
+- Logout forhindrer adgang til data, indtil brugeren logger ind igen.
 
-### US02 - Fridge Overview
+### US02 - Køleskabsoversigt
 
-- All items are shown after login.
-- Red marking is used when 1-2 days remain.
-- Yellow marking is used when 3-5 days remain.
-- Green marking is used when 6 or more days remain.
-- Empty overview shows "Dit køleskab er tomt - tilføj din første vare".
-- Overview updates in realtime without manual reload.
+- Alle varer vises efter login.
+- Rød markering bruges, når der er 1-2 dage tilbage.
+- Gul markering bruges, når der er 3-5 dage tilbage.
+- Grøn markering bruges, når der er 6 eller flere dage tilbage.
+- Tom oversigt viser "Dit køleskab er tomt - tilføj din første vare".
+- Oversigten opdateres i realtid uden manuel genindlæsning.
 
-### US03 - Notification
+### US03 - Notifikation
 
-- Notification is sent exactly 2 days before expiry.
-- Notification contains item name and expiry date.
-- No notification is sent for items with more than 2 days remaining.
-- Pressing the notification opens the app and shows the item.
-- If notifications are disabled, no notification is sent, but red overview marking still appears.
+- Notifikation sendes præcis 2 dage før udløb.
+- Notifikationen indeholder varenavn og udløbsdato.
+- Der sendes ingen notifikation for varer med mere end 2 dage tilbage.
+- Tryk på notifikationen åbner appen og viser varen.
+- Hvis notifikationer er slået fra, sendes ingen notifikation, men rød markering vises stadig i oversigten.
 
-## Scrum Setup
+## Scrum-opsætning
 
 Daily Scrum:
 
-- What did I do since last time?
-- What am I doing today?
-- What is blocking me?
+- Hvad lavede jeg siden sidst?
+- Hvad laver jeg i dag?
+- Hvad blokerer mig?
 
 Sprint Review:
 
-- Demo on a real device
-- Review acceptance criteria
-- Evaluate sprint backlog
-- Update product backlog
-- Short retrospective
+- Demo på rigtig enhed
+- Gennemgang af acceptkriterier
+- Vurdering af sprint backlog
+- Opdatering af product backlog
+- Kort retrospektiv
