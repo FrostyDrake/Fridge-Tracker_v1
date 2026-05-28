@@ -1,0 +1,178 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
+import '../services/fridge_item_service.dart';
+
+class AddItemScreen extends StatefulWidget {
+  const AddItemScreen({
+    super.key,
+    required this.userId,
+  });
+
+  final String userId;
+
+  @override
+  State<AddItemScreen> createState() => _AddItemScreenState();
+}
+
+class _AddItemScreenState extends State<AddItemScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _expiryDateController = TextEditingController();
+  final _service = FridgeItemService();
+
+  bool _isSaving = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _categoryController.dispose();
+    _expiryDateController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveItem() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final expiryDate = DateTime.parse(_expiryDateController.text.trim());
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await _service
+          .addItem(
+            userId: widget.userId,
+            name: _nameController.text.trim(),
+            category: _categoryController.text.trim(),
+            expiryDate: expiryDate,
+          )
+          .timeout(const Duration(seconds: 12));
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.pop(context);
+    } on TimeoutException {
+      _showError(
+        'Databasen svarer ikke. Tjek Firestore database og Firebase config.',
+      );
+    } on FirebaseException catch (error) {
+      _showError(_firebaseErrorMessage(error));
+    } catch (error) {
+      _showError('Varen kunne ikke gemmes: $error');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 8),
+      ),
+    );
+  }
+
+  String _firebaseErrorMessage(FirebaseException error) {
+    if (error.code == 'not-found') {
+      return 'Firestore databasen findes ikke. Opret database (default) i Firebase Console.';
+    }
+    if (error.code == 'permission-denied') {
+      return 'Ingen adgang til Firestore. Tjek security rules for test-user.';
+    }
+    return 'Firebase fejl (${error.code}): ${error.message ?? error}';
+  }
+
+  String? _requiredText(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Feltet skal udfyldes';
+    }
+    return null;
+  }
+
+  String? _validateDate(String? value) {
+    final requiredError = _requiredText(value);
+    if (requiredError != null) {
+      return requiredError;
+    }
+
+    final date = DateTime.tryParse(value!.trim());
+    if (date == null) {
+      return 'Brug formatet YYYY-MM-DD';
+    }
+
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tilfoj vare'),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Varenavn',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _requiredText,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _categoryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _requiredText,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _expiryDateController,
+                  keyboardType: TextInputType.datetime,
+                  decoration: const InputDecoration(
+                    labelText: 'Udlobsdato',
+                    hintText: 'fx 2026-06-01',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: _validateDate,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: _isSaving ? null : _saveItem,
+                  child: Text(_isSaving ? 'Gemmer...' : 'Gem vare'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

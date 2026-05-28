@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -48,6 +45,15 @@ class DefaultFirebaseOptions {
         );
     }
   }
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyA6JZJ6WDifddIIMuiGxkRnMwg9uZiNGks',
+    appId: '1:1038146272174:web:34d81ebcf11211f886663f',
+    messagingSenderId: '1038146272174',
+    projectId: 'fridge-tracker-9bd57',
+    authDomain: 'fridge-tracker-9bd57.firebaseapp.com',
+    storageBucket: 'fridge-tracker-9bd57.firebasestorage.app',
+  );
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyA6JZJ6WDifddIIMuiGxkRnMwg9uZiNGks',
