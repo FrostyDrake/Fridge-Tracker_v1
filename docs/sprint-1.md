@@ -16,6 +16,42 @@ oprettelse, læsning og sletning af varer.
 
 Total: 13 story points.
 
+## Daglig task-plan
+
+Planen nedenfor fordeler Sprint 1-arbejdet mellem Andrei, Azad og Dylan. Den er
+lavet, så Firebase/Auth, database og UI kan udvikles parallelt uden at blokere
+hinanden unødigt.
+
+### Andrei
+
+| Dag | Fokus | Tasks |
+| --- | ----- | ----- |
+| Dag 1 | Firebase og projektopsætning | Opret Firebase-projekt, aktiver Firebase Authentication, konfigurer email/password-login og del Firebase-konfiguration med teamet |
+| Dag 2 | Auth-flow | Implementer login, opret konto og logout i Flutter via Firebase Auth |
+| Dag 3 | Validering og fejlbeskeder | Tilføj validering af email/adgangskode og vis fejlbeskeder for ugyldig email, kort adgangskode og eksisterende email |
+| Dag 4 | Sikkerhed og test | Gennemgå auth-flow, test at brugere kun kan tilgå egne data, og samarbejd med Dylan om Firestore security rules |
+| Dag 5 | Sprint review-forberedelse | Klargør demo af login/logout, dokumenter kendte fejl og hjælp med samlet integrationstest |
+
+### Azad
+
+| Dag | Fokus | Tasks |
+| --- | ----- | ----- |
+| Dag 1 | UI-struktur | Opret grundlæggende Flutter-screens for login, køleskabsoversigt og manuel tilføjelse |
+| Dag 2 | Køleskabsoversigt | Byg ListView UI til varer med navn, kategori, udløbsdato og tom-tilstand |
+| Dag 3 | Manuel tilføjelse | Byg formular til manuel varetilføjelse med felter for navn, kategori og udløbsdato |
+| Dag 4 | Sletning og fortryd | Implementer swipe-to-delete i UI og vis 5 sekunders fortrydmulighed |
+| Dag 5 | UI-polering og demo | Test navigation, ret layoutfejl, verificer farvekodning og klargør demo på rigtig enhed |
+
+### Dylan
+
+| Dag | Fokus | Tasks |
+| --- | ----- | ----- |
+| Dag 1 | Datamodel | Definer Firestore-struktur for User, Fridge og FridgeItem samt felter for varer |
+| Dag 2 | Firestore-integration | Implementer læsning af varer fra Firestore med realtidsopdatering |
+| Dag 3 | Opret og gem varer | Implementer Firestore-skrivning fra formularen og standardiser datoformat på Firestore Timestamp eller ISO 8601 |
+| Dag 4 | Security rules | Skriv og test Firestore security rules, så brugere kun kan læse og skrive egne køleskabsdata |
+| Dag 5 | Datatest og integration | Test sortering, tom oversigt, offline cache og samarbejd med Andrei/Azad om samlet sprintdemo |
+
 ## Funktionelle krav
 
 | ID | Krav |
