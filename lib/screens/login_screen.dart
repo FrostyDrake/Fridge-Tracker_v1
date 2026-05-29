@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/auth_service.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -37,17 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
+      final authService = AuthService();
 
       if (_isCreatingAccount) {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await authService.createAccount(email: email, password: password);
       } else {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: email,
-          password: password,
-        );
+        await authService.signIn(email: email, password: password);
       }
     } on FirebaseAuthException catch (error) {
       setState(() {
@@ -111,83 +108,79 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Form(
                 key: _formKey,
                 child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Icon(
-                    Icons.kitchen,
-                    size: 72,
-                    color: Colors.green,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Fridge Tracker',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: _validateEmail,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Adgangskode',
-                      border: OutlineInputBorder(),
-                    ),
-                    validator: _validatePassword,
-                    onFieldSubmitted: (_) => _isLoading ? null : _submit(),
-                  ),
-                  if (_errorMessage != null) ...[
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Icon(Icons.kitchen, size: 72, color: Colors.green),
                     const SizedBox(height: 16),
-                    Text(
-                      _errorMessage!,
+                    const Text(
+                      'Fridge Tracker',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    TextFormField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: _validateEmail,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Adgangskode',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: _validatePassword,
+                      onFieldSubmitted: (_) => _isLoading ? null : _submit(),
+                    ),
+                    if (_errorMessage != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        _errorMessage!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _isLoading ? null : _submit,
+                      child: Text(
+                        _isLoading
+                            ? 'Arbejder...'
+                            : _isCreatingAccount
+                            ? 'Opret konto'
+                            : 'Log ind',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              setState(() {
+                                _isCreatingAccount = !_isCreatingAccount;
+                                _errorMessage = null;
+                              });
+                            },
+                      child: Text(
+                        _isCreatingAccount
+                            ? 'Har du allerede en konto? Log ind'
+                            : 'Opret ny konto',
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _isLoading ? null : _submit,
-                    child: Text(
-                      _isLoading
-                          ? 'Arbejder...'
-                          : _isCreatingAccount
-                              ? 'Opret konto'
-                              : 'Log ind',
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _isLoading
-                        ? null
-                        : () {
-                            setState(() {
-                              _isCreatingAccount = !_isCreatingAccount;
-                              _errorMessage = null;
-                            });
-                          },
-                    child: Text(
-                      _isCreatingAccount
-                          ? 'Har du allerede en konto? Log ind'
-                          : 'Opret ny konto',
-                    ),
-                  ),
-                ],
                 ),
               ),
             ),

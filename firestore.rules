@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function ownsUserDocument(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function validUserDocument() {
+      return request.resource.data.keys().hasOnly([
+        'email',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+
+    function validFridgeDocument() {
+      return request.resource.data.keys().hasOnly([
+        'name',
+        'createdAt',
+        'updatedAt',
+      ]);
+    }
+
+    function validFridgeItem() {
+      return request.resource.data.keys().hasOnly([
+        'name',
+        'category',
+        'addedDate',
+        'expiryDate',
+        'source',
+        'imageUrl',
+      ])
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.category is string
+      && request.resource.data.category.size() > 0
+      && request.resource.data.addedDate is timestamp
+      && request.resource.data.expiryDate is timestamp
+      && request.resource.data.source is string
+      && (
+        !('imageUrl' in request.resource.data)
+        || request.resource.data.imageUrl == null
+        || request.resource.data.imageUrl is string
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if ownsUserDocument(userId);
+      allow create, update: if ownsUserDocument(userId) && validUserDocument();
+      allow delete: if false;
+
+      match /fridges/{fridgeId} {
+        allow read: if ownsUserDocument(userId);
+        allow create, update: if ownsUserDocument(userId) && validFridgeDocument();
+        allow delete: if false;
+
+        match /items/{itemId} {
+          allow read: if ownsUserDocument(userId);
+          allow create, update: if ownsUserDocument(userId) && validFridgeItem();
+          allow delete: if ownsUserDocument(userId);
+        }
+      }
+    }
+  }
+}

@@ -6,10 +6,7 @@ import 'package:flutter/material.dart';
 import '../services/fridge_item_service.dart';
 
 class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({
-    super.key,
-    required this.userId,
-  });
+  const AddItemScreen({super.key, required this.userId});
 
   final String userId;
 
@@ -83,10 +80,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 8),
-      ),
+      SnackBar(content: Text(message), duration: const Duration(seconds: 8)),
     );
   }
 
@@ -124,9 +118,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tilføj vare'),
-      ),
+      appBar: AppBar(title: const Text('Tilføj vare')),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

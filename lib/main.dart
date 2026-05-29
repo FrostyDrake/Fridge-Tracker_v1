@@ -61,9 +61,7 @@ class AppStartup extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
 
@@ -93,10 +91,7 @@ class AppStartup extends StatelessWidget {
 }
 
 class AuthGate extends StatelessWidget {
-  const AuthGate({
-    super.key,
-    required this.authStateChanges,
-  });
+  const AuthGate({super.key, required this.authStateChanges});
 
   final Stream<User?> authStateChanges;
 

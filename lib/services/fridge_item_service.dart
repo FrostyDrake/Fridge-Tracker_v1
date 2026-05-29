@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'firestore_database.dart';
+
 class FridgeItemService {
-  FridgeItemService({
-    FirebaseFirestore? firestore,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance;
+  FridgeItemService({FirebaseFirestore? firestore})
+    : _firestore = firestore ?? FirestoreDatabase.instance;
 
   final FirebaseFirestore _firestore;
 
@@ -17,9 +18,7 @@ class FridgeItemService {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> watchItems(String userId) {
-    return _itemsCollection(userId)
-        .orderBy('expiryDate')
-        .snapshots();
+    return _itemsCollection(userId).orderBy('expiryDate').snapshots();
   }
 
   Future<void> addItem({
@@ -40,10 +39,7 @@ class FridgeItemService {
     });
   }
 
-  Future<void> deleteItem({
-    required String userId,
-    required String itemId,
-  }) {
+  Future<void> deleteItem({required String userId, required String itemId}) {
     return _itemsCollection(userId).doc(itemId).delete();
   }
 }

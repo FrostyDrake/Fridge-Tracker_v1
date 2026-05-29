@@ -6,6 +6,8 @@
 .pub-cache/
 .pub/
 build/
+.tools/
+flutter_releases_windows.json
 
 # Android
 android/.gradle/
@@ -26,10 +28,7 @@ ios/Pods/
 ios/.symlinks/
 ios/Runner/GeneratedPluginRegistrant.*
 
-# Firebase and secrets
-firebase_options.dart
-google-services.json
-GoogleService-Info.plist
+# Secrets
 .env
 .env.*
 

@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"fridge-tracker-9bd57","appId":"1:1038146272174:android:34d81ebcf11211f886663f","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"fridge-tracker-9bd57","configurations":{"android":"1:1038146272174:android:34d81ebcf11211f886663f","ios":"1:1038146272174:ios:2a1d14251e9cfb8686663f"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "fridge-tracker-9bd57",
+          "appId": "1:1038146272174:android:34d81ebcf11211f886663f",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "fridge-tracker-9bd57",
+          "configurations": {
+            "android": "1:1038146272174:android:34d81ebcf11211f886663f",
+            "ios": "1:1038146272174:ios:2a1d14251e9cfb8686663f"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
