@@ -7,6 +7,7 @@ import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
 import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
+import 'ocr_scanner_screen.dart';
 
 class FridgeOverviewScreen extends StatelessWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
@@ -38,6 +39,21 @@ class FridgeOverviewScreen extends StatelessWidget {
     }
 
     await _addScannedBarcode(context, barcode);
+  }
+
+  Future<void> _goToOcrScanner(BuildContext context) async {
+    final didSave = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => OcrScannerScreen(userId: userId)),
+    );
+
+    if (!context.mounted || didSave != true) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Varen blev tilføjet fra tekstscan')),
+    );
   }
 
   Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
@@ -191,6 +207,12 @@ class FridgeOverviewScreen extends StatelessWidget {
               icon: const Icon(Icons.qr_code_scanner),
               label: const Text('Scan stregkode'),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _goToOcrScanner(context),
+              icon: const Icon(Icons.document_scanner),
+              label: const Text('Scan varetekst'),
+            ),
             if (kDebugMode) ...[
               const SizedBox(height: 16),
               SelectableText(
@@ -274,6 +296,11 @@ class FridgeOverviewScreen extends StatelessWidget {
             onPressed: () => _goToBarcodeScanner(context),
             tooltip: 'Scan stregkode',
             icon: const Icon(Icons.qr_code_scanner),
+          ),
+          IconButton(
+            onPressed: () => _goToOcrScanner(context),
+            tooltip: 'Scan varetekst',
+            icon: const Icon(Icons.document_scanner),
           ),
           IconButton(
             onPressed: _signOut,
