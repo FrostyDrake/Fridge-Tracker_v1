@@ -15,7 +15,11 @@ service cloud.firestore {
         'email',
         'createdAt',
         'updatedAt',
-      ]);
+      ])
+      && request.resource.data.email is string
+      && request.resource.data.email.size() > 0
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
     }
 
     function validFridgeDocument() {
@@ -23,7 +27,11 @@ service cloud.firestore {
         'name',
         'createdAt',
         'updatedAt',
-      ]);
+      ])
+      && request.resource.data.name is string
+      && request.resource.data.name.size() > 0
+      && request.resource.data.createdAt is timestamp
+      && request.resource.data.updatedAt is timestamp;
     }
 
     function validFridgeItem() {
@@ -42,6 +50,7 @@ service cloud.firestore {
       && request.resource.data.addedDate is timestamp
       && request.resource.data.expiryDate is timestamp
       && request.resource.data.source is string
+      && request.resource.data.source in ['manual', 'scan', 'barcode']
       && (
         !('imageUrl' in request.resource.data)
         || request.resource.data.imageUrl == null
