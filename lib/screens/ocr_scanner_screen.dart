@@ -199,6 +199,11 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                   categoryController: _categoryController,
                   expiryDateController: _expiryDateController,
                   confidenceText: _confidenceText(suggestion.confidence),
+                  reason: suggestion.reason,
+                  alternativeNames: suggestion.alternativeNames,
+                  onUseAlternativeName: (name) {
+                    _nameController.text = name;
+                  },
                   rawText: suggestion.rawText,
                   isSaving: _isSaving,
                   onRetake: _scanImage,
@@ -229,6 +234,9 @@ class _ConfirmationForm extends StatelessWidget {
     required this.categoryController,
     required this.expiryDateController,
     required this.confidenceText,
+    required this.reason,
+    required this.alternativeNames,
+    required this.onUseAlternativeName,
     required this.rawText,
     required this.isSaving,
     required this.onRetake,
@@ -242,6 +250,9 @@ class _ConfirmationForm extends StatelessWidget {
   final TextEditingController categoryController;
   final TextEditingController expiryDateController;
   final String confidenceText;
+  final String reason;
+  final List<String> alternativeNames;
+  final ValueChanged<String> onUseAlternativeName;
   final String rawText;
   final bool isSaving;
   final VoidCallback onRetake;
@@ -262,6 +273,22 @@ class _ConfirmationForm extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(confidenceText),
+          const SizedBox(height: 4),
+          Text(reason),
+          if (alternativeNames.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final name in alternativeNames)
+                  ActionChip(
+                    label: Text(name),
+                    onPressed: () => onUseAlternativeName(name),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           TextFormField(
             controller: nameController,

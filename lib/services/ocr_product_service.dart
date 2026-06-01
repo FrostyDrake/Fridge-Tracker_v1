@@ -6,14 +6,18 @@ class OcrProductSuggestion {
     required this.name,
     required this.category,
     required this.confidence,
+    required this.reason,
     this.expiryDate,
+    this.alternativeNames = const [],
   });
 
   final String rawText;
   final String name;
   final String category;
   final double confidence;
+  final String reason;
   final DateTime? expiryDate;
+  final List<String> alternativeNames;
 }
 
 class OcrProductService {
@@ -63,13 +67,21 @@ class OcrProductService {
   OcrProductSuggestion analyzeText(String rawText) {
     final normalizedText = _normalize(rawText);
     final keyword = _bestKeyword(normalizedText);
+    final rankedLines = _rankProductLines(rawText);
+    final fallbackName = rankedLines.isEmpty ? null : rankedLines.first;
 
     return OcrProductSuggestion(
       rawText: rawText,
-      name: keyword?.name ?? 'Ukendt vare',
+      name: keyword?.name ?? fallbackName ?? 'Ukendt vare',
       category: keyword?.category ?? 'Ukendt',
-      confidence: keyword?.confidence ?? 0,
+      confidence: keyword?.confidence ?? (fallbackName == null ? 0 : 0.45),
+      reason: keyword == null
+          ? fallbackName == null
+                ? 'OCR fandt tekst, men ingen tydelig produktlinje.'
+                : 'Forslag baseret på den mest sandsynlige produktlinje.'
+          : 'Forslag baseret på kendte produktord.',
       expiryDate: _findExpiryDate(rawText),
+      alternativeNames: rankedLines.take(5).toList(),
     );
   }
 
@@ -134,6 +146,111 @@ class OcrProductService {
 
     plausible.sort();
     return plausible.first;
+  }
+
+  List<String> _rankProductLines(String rawText) {
+    final lines = rawText
+        .split(RegExp(r'[\r\n]+'))
+        .map((line) => line.trim())
+        .where((line) => line.length >= 3)
+        .where((line) => !_isNoiseLine(line))
+        .toSet()
+        .toList();
+
+    lines.sort((a, b) => _lineScore(b).compareTo(_lineScore(a)));
+    return lines.take(8).toList();
+  }
+
+  bool _isNoiseLine(String line) {
+    final normalized = _normalize(line);
+    final letters = RegExp(r'[a-zA-ZæøåÆØÅ]').allMatches(line).length;
+    final digits = RegExp(r'\d').allMatches(line).length;
+
+    if (letters < 2) {
+      return true;
+    }
+    if (digits > letters + 2) {
+      return true;
+    }
+    if (RegExp(
+      r'^\d+[.,]?\d*\s?(g|kg|ml|l|kcal|kj|%)$',
+      caseSensitive: false,
+    ).hasMatch(line.trim())) {
+      return true;
+    }
+
+    const noiseWords = [
+      'bedst',
+      'foer',
+      'før',
+      'sidste',
+      'anvendelse',
+      'mindst',
+      'holdbar',
+      'opbevares',
+      'naering',
+      'næring',
+      'energi',
+      'protein',
+      'fedt',
+      'kulhydrat',
+      'sukker',
+      'salt',
+      'ingrediens',
+      'ingredienser',
+      'produceret',
+      'netto',
+      'batch',
+      'lot',
+      'www',
+      'http',
+    ];
+
+    return noiseWords.any(normalized.contains);
+  }
+
+  int _lineScore(String line) {
+    final normalized = _normalize(line);
+    final letters = RegExp(r'[a-zA-ZæøåÆØÅ]').allMatches(line).length;
+    final words = normalized
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((word) => word.length >= 2)
+        .length;
+
+    var score = letters + (words * 4);
+
+    const productSignals = [
+      'arla',
+      'maelk',
+      'mælk',
+      'yoghurt',
+      'ost',
+      'smoer',
+      'smør',
+      'kylling',
+      'fisk',
+      'laks',
+      'salat',
+      'tomat',
+      'agurk',
+      'broed',
+      'brød',
+      'organic',
+      'oekologisk',
+      'økologisk',
+    ];
+
+    for (final signal in productSignals) {
+      if (normalized.contains(signal)) {
+        score += 20;
+      }
+    }
+
+    if (line.length > 40) {
+      score -= line.length - 40;
+    }
+
+    return score;
   }
 
   int? _parseYear(String value) {
