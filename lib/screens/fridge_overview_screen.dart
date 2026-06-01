@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/fridge_item_service.dart';
 import 'add_item_screen.dart';
+import 'barcode_scanner_screen.dart';
 
 class FridgeOverviewScreen extends StatelessWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
@@ -20,6 +21,27 @@ class FridgeOverviewScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => AddItemScreen(userId: userId)),
+    );
+  }
+
+  Future<void> _goToBarcodeScanner(BuildContext context) async {
+    final barcode = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (context) => const BarcodeScannerScreen()),
+    );
+
+    if (!context.mounted || barcode == null) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Stregkode scannet: $barcode'),
+        action: SnackBarAction(
+          label: 'OK',
+          onPressed: () {},
+        ),
+      ),
     );
   }
 
@@ -123,6 +145,12 @@ class FridgeOverviewScreen extends StatelessWidget {
               icon: const Icon(Icons.add),
               label: const Text('Tilføj vare'),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _goToBarcodeScanner(context),
+              icon: const Icon(Icons.qr_code_scanner),
+              label: const Text('Scan stregkode'),
+            ),
             if (kDebugMode) ...[
               const SizedBox(height: 16),
               SelectableText(
@@ -202,6 +230,11 @@ class FridgeOverviewScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Mit køleskab'),
         actions: [
+          IconButton(
+            onPressed: () => _goToBarcodeScanner(context),
+            tooltip: 'Scan stregkode',
+            icon: const Icon(Icons.qr_code_scanner),
+          ),
           IconButton(
             onPressed: _signOut,
             tooltip: 'Log ud',
