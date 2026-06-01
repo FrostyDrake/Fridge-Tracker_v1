@@ -42,4 +42,30 @@ class FridgeItemService {
   Future<void> deleteItem({required String userId, required String itemId}) {
     return _itemsCollection(userId).doc(itemId).delete();
   }
+
+  Future<void> updateItem({
+    required String userId,
+    required String itemId,
+    String? name,
+    String? category,
+    DateTime? expiryDate,
+  }) {
+    final updates = <String, dynamic>{};
+
+    if (name != null) {
+      updates['name'] = name;
+    }
+    if (category != null) {
+      updates['category'] = category;
+    }
+    if (expiryDate != null) {
+      updates['expiryDate'] = Timestamp.fromDate(expiryDate);
+    }
+
+    if (updates.isEmpty) {
+      return Future.value();
+    }
+
+    return _itemsCollection(userId).doc(itemId).update(updates);
+  }
 }
