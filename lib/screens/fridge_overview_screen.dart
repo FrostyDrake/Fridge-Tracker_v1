@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/fridge_item_service.dart';
+import '../services/open_food_facts_service.dart';
 import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
 
@@ -14,6 +15,8 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   static final FridgeItemService _service = FridgeItemService();
   static final AuthService _authService = AuthService();
+  static final OpenFoodFactsService _openFoodFactsService =
+      OpenFoodFactsService();
 
   String get _itemsPath => 'users/$userId/fridges/default/items';
 
@@ -34,15 +37,52 @@ class FridgeOverviewScreen extends StatelessWidget {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Stregkode scannet: $barcode'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
+    await _addScannedBarcode(context, barcode);
+  }
+
+  Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Henter produkt for stregkode $barcode...')),
     );
+
+    OpenFoodFactsProduct product;
+    try {
+      product = await _openFoodFactsService.findByBarcode(barcode);
+    } catch (_) {
+      product = OpenFoodFactsProduct(
+        barcode: barcode,
+        name: 'Stregkode $barcode',
+        category: 'Ukendt',
+      );
+    }
+
+    try {
+      await _service.addItem(
+        userId: userId,
+        name: product.name,
+        category: product.category,
+        expiryDate: DateTime.now().add(const Duration(days: 7)),
+        source: 'barcode',
+        imageUrl: product.imageUrl,
+      );
+
+      if (!context.mounted) {
+        return;
+      }
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('${product.name} blev tilføjet')),
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      messenger.showSnackBar(
+        SnackBar(content: Text('Produktet kunne ikke tilføjes: $error')),
+      );
+    }
   }
 
   Future<void> _deleteItem(String itemId) {
