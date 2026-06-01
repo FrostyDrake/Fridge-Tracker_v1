@@ -54,6 +54,10 @@ class FridgeOverviewScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _signOut() {
+    return _authService.signOut();
+  }
+
   Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
