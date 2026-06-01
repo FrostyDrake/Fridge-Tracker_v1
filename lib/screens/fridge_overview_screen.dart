@@ -42,7 +42,10 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   // Firestore actions.
   Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
-    _showSnackBar(context, 'Henter produkt for stregkode $barcode...');
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(content: Text('Henter produkt for stregkode $barcode...')),
+    );
 
     final product = await _findProduct(barcode);
 
@@ -55,7 +58,12 @@ class FridgeOverviewScreen extends StatelessWidget {
         source: 'barcode',
         imageUrl: product.imageUrl,
       );
-      _showSnackBar(context, '${product.name} blev tilføjet');
+
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('${product.name} blev tilføjet')),
+        );
+      }
     } catch (error) {
       _showSnackBar(context, 'Produktet kunne ikke tilføjes: $error');
     }
@@ -125,16 +133,18 @@ class FridgeOverviewScreen extends StatelessWidget {
       context,
       title: 'Rediger udløbsdato',
       label: 'Udløbsdato',
-      value: _dateText(value),
-      hintText: 'fx 01-06-2026',
+      value: value == null ? '' : _formatDate(value),
+      hintText: 'fx 2026-06-01',
       keyboardType: TextInputType.datetime,
     );
 
-    if (newValue == null || newValue.isEmpty) return;
+    if (newValue == null || newValue.isEmpty) {
+      return;
+    }
 
-    final date = _parseDate(newValue);
+    final date = DateTime.tryParse(newValue);
     if (date == null) {
-      _showSnackBar(context, 'Brug datoformatet DD-MM-YYYY');
+      _showSnackBar(context, 'Brug datoformatet YYYY-MM-DD');
       return;
     }
 
@@ -149,7 +159,7 @@ class FridgeOverviewScreen extends StatelessWidget {
     String? hintText,
     TextInputType? keyboardType,
   }) async {
-    final controller = TextEditingController(text: value == 'Ingen dato' ? '' : value);
+    final controller = TextEditingController(text: value);
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -182,35 +192,24 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   // Data formatting.
   Color _expiryColor(DateTime? date) {
-    if (date == null) return Colors.grey;
+    if (date == null) {
+      return Colors.grey;
+    }
 
     final today = DateTime.now();
     final currentDate = DateTime(today.year, today.month, today.day);
     final itemDate = DateTime(date.year, date.month, date.day);
     final daysLeft = itemDate.difference(currentDate).inDays;
 
-    if (daysLeft <= 2) return Colors.red;
-    if (daysLeft <= 5) return Colors.orange;
+    if (daysLeft <= 3) return Colors.red;
+    if (daysLeft <= 7) return Colors.orange;
     return Colors.green;
   }
 
-  DateTime? _parseDate(String value) {
-    final parts = value.split('-');
-    if (parts.length == 3 && parts[0].length == 2) {
-      final day = int.tryParse(parts[0]);
-      final month = int.tryParse(parts[1]);
-      final year = int.tryParse(parts[2]);
-      if (day != null && month != null && year != null) {
-        return DateTime(year, month, day);
-      }
-    }
-    return DateTime.tryParse(value);
-  }
-
   String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    return '$day-$month-${date.year}';
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   String _dateText(DateTime? date) {
@@ -238,7 +237,9 @@ class FridgeOverviewScreen extends StatelessWidget {
   }
 
   void _showSnackBar(BuildContext context, String message) {
-    if (!context.mounted) return;
+    if (!context.mounted) {
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
