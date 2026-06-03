@@ -20,7 +20,6 @@ class FridgeOverviewScreen extends StatelessWidget {
 
   String get _itemsPath => 'users/$userId/fridges/default/items';
 
-  // Navigation.
   void _goToAddItem(BuildContext context) {
     Navigator.push(
       context,
@@ -34,15 +33,17 @@ class FridgeOverviewScreen extends StatelessWidget {
       MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
     );
 
-    if (context.mounted && barcode != null) {
-      await _addScannedBarcode(context, barcode);
+    if (!context.mounted || barcode == null) {
+      return;
     }
+
+    await _addScannedBarcode(context, barcode);
   }
 
   Future<void> _goToOcrScanner(BuildContext context) async {
     final didSave = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (context) => OcrScannerScreen(userId: userId)),
+      MaterialPageRoute(builder: (_) => OcrScannerScreen(userId: userId)),
     );
 
     if (!context.mounted || didSave != true) {
@@ -76,12 +77,13 @@ class FridgeOverviewScreen extends StatelessWidget {
         imageUrl: product.imageUrl,
       );
 
-      if (context.mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text('${product.name} blev tilføjet')),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('${product.name} blev tilføjet')),
+      );
     } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
       _showSnackBar(context, 'Produktet kunne ikke tilføjes: $error');
     }
   }
@@ -98,8 +100,37 @@ class FridgeOverviewScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _deleteItem(String itemId) {
-    return _itemService.deleteItem(userId: userId, itemId: itemId);
+  Future<void> _deleteItemWithUndo(
+    BuildContext context,
+    _FridgeItem item,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await _itemService.deleteItem(userId: userId, itemId: item.id);
+    } catch (error) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Varen kunne ikke slettes: $error')),
+      );
+      return;
+    }
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('${item.name} blev slettet'),
+        duration: const Duration(seconds: 5),
+        action: SnackBarAction(
+          label: 'Fortryd',
+          onPressed: () {
+            _itemService.restoreItem(
+              userId: userId,
+              itemId: item.id,
+              data: item.data,
+            );
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _updateItem(
@@ -118,11 +149,13 @@ class FridgeOverviewScreen extends StatelessWidget {
         expiryDate: expiryDate,
       );
     } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
       _showSnackBar(context, 'Varen kunne ikke opdateres: $error');
     }
   }
 
-  // Edit dialogs.
   Future<void> _editText({
     required BuildContext context,
     required String label,
@@ -136,9 +169,14 @@ class FridgeOverviewScreen extends StatelessWidget {
       value: value,
     );
 
-    if (newValue != null && newValue.isNotEmpty && newValue != value) {
-      await save(newValue);
+    if (newValue == null || newValue.isEmpty || newValue == value) {
+      return;
     }
+    if (!context.mounted) {
+      return;
+    }
+
+    await save(newValue);
   }
 
   Future<void> _editDate({
@@ -156,6 +194,9 @@ class FridgeOverviewScreen extends StatelessWidget {
     );
 
     if (newValue == null || newValue.isEmpty) {
+      return;
+    }
+    if (!context.mounted) {
       return;
     }
 
@@ -207,7 +248,6 @@ class FridgeOverviewScreen extends StatelessWidget {
     return result;
   }
 
-  // Data formatting.
   Color _expiryColor(DateTime? date) {
     if (date == null) {
       return Colors.grey;
@@ -241,7 +281,7 @@ class FridgeOverviewScreen extends StatelessWidget {
     switch (error.code) {
       case 'not-found':
         return 'Firestore databasen findes ikke.\n\n'
-            'Opret Cloud Firestore database "(default)" i Firebase Console.';
+            'Tjek at appen bruger den rigtige Firestore database.';
       case 'permission-denied':
         return 'Ingen adgang til Firestore.\n\n'
             'Tjek security rules og data-stien:\n$_itemsPath';
@@ -257,12 +297,11 @@ class FridgeOverviewScreen extends StatelessWidget {
     if (!context.mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  // UI.
   Widget _itemsView(BuildContext context) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _itemService.watchItems(userId),
@@ -283,7 +322,7 @@ class FridgeOverviewScreen extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          separatorBuilder: (_, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             return _productDropdown(context, items[index]);
           },
@@ -358,7 +397,7 @@ class FridgeOverviewScreen extends StatelessWidget {
         color: Colors.red,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      onDismissed: (_) => _deleteItem(item.id),
+      onDismissed: (_) => _deleteItemWithUndo(context, item),
       child: Card(
         child: ExpansionTile(
           leading: CircleAvatar(backgroundColor: _expiryColor(item.expiryDate)),
@@ -479,12 +518,14 @@ class _FridgeItem {
     required this.name,
     required this.category,
     required this.expiryDate,
+    required this.data,
   });
 
   final String id;
   final String name;
   final String category;
   final DateTime? expiryDate;
+  final Map<String, dynamic> data;
 
   factory _FridgeItem.fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
@@ -493,6 +534,7 @@ class _FridgeItem {
       name: data['name'] as String? ?? 'Ukendt vare',
       category: data['category'] as String? ?? 'Ingen kategori',
       expiryDate: _readDate(data['expiryDate']),
+      data: data,
     );
   }
 

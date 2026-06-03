@@ -43,6 +43,14 @@ class FridgeItemService {
     return _itemsCollection(userId).doc(itemId).delete();
   }
 
+  Future<void> restoreItem({
+    required String userId,
+    required String itemId,
+    required Map<String, dynamic> data,
+  }) {
+    return _itemsCollection(userId).doc(itemId).set(data);
+  }
+
   Future<void> updateItem({
     required String userId,
     required String itemId,

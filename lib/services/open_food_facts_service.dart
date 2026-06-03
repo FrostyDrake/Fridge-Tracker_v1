@@ -26,7 +26,8 @@ class ProductLookupException implements Exception {
 }
 
 class OpenFoodFactsService {
-  OpenFoodFactsService({http.Client? client}) : _client = client ?? http.Client();
+  OpenFoodFactsService({http.Client? client})
+    : _client = client ?? http.Client();
 
   final http.Client _client;
 
@@ -48,9 +49,7 @@ class OpenFoodFactsService {
 
     final response = await _client.get(
       uri,
-      headers: {
-        'User-Agent': 'FridgeTracker/1.0 (student project)',
-      },
+      headers: {'User-Agent': 'FridgeTracker/1.0 (student project)'},
     );
 
     if (response.statusCode != 200) {
