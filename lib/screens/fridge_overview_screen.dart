@@ -248,6 +248,26 @@ class FridgeOverviewScreen extends StatelessWidget {
     return result;
   }
 
+  Future<void> _pickDate({
+    required BuildContext context,
+    required String itemId,
+    required DateTime? value,
+  }) async {
+    final today = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: value ?? today,
+      firstDate: DateTime(today.year - 1),
+      lastDate: DateTime(today.year + 5),
+    );
+
+    if (pickedDate == null || !context.mounted) {
+      return;
+    }
+
+    await _updateItem(context, itemId, expiryDate: pickedDate);
+  }
+
   Color _expiryColor(DateTime? date) {
     if (date == null) {
       return Colors.grey;
@@ -428,7 +448,7 @@ class FridgeOverviewScreen extends StatelessWidget {
             _detailRow(
               label: 'Udløbsdato',
               value: _dateText(item.expiryDate),
-              onEdit: () => _editDate(
+              onEdit: () => _pickDate(
                 context: context,
                 itemId: item.id,
                 value: item.expiryDate,

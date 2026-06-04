@@ -21,6 +21,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _expiryDateController = TextEditingController();
   final _service = FridgeItemService();
 
+  DateTime? _selectedExpiryDate;
   bool _isSaving = false;
 
   @override
@@ -36,7 +37,10 @@ class _AddItemScreenState extends State<AddItemScreen> {
       return;
     }
 
-    final expiryDate = DateTime.parse(_expiryDateController.text.trim());
+    final expiryDate = _selectedExpiryDate;
+    if (expiryDate == null) {
+      return;
+    }
 
     setState(() {
       _isSaving = true;
@@ -102,17 +106,36 @@ class _AddItemScreenState extends State<AddItemScreen> {
   }
 
   String? _validateDate(String? value) {
-    final requiredError = _requiredText(value);
-    if (requiredError != null) {
-      return requiredError;
-    }
-
-    final date = DateTime.tryParse(value!.trim());
-    if (date == null) {
-      return 'Brug formatet YYYY-MM-DD';
+    if (_selectedExpiryDate == null) {
+      return 'Vælg en udløbsdato';
     }
 
     return null;
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day-$month-${date.year}';
+  }
+
+  Future<void> _pickExpiryDate() async {
+    final today = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedExpiryDate ?? today,
+      firstDate: DateTime(today.year - 1),
+      lastDate: DateTime(today.year + 5),
+    );
+
+    if (pickedDate == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedExpiryDate = pickedDate;
+      _expiryDateController.text = _formatDate(pickedDate);
+    });
   }
 
   @override
@@ -147,11 +170,13 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _expiryDateController,
-                  keyboardType: TextInputType.datetime,
+                  readOnly: true,
+                  onTap: _pickExpiryDate,
                   decoration: const InputDecoration(
                     labelText: 'Udløbsdato',
-                    hintText: 'fx 2026-06-01',
+                    hintText: 'Vælg dato',
                     border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.calendar_today),
                   ),
                   validator: _validateDate,
                 ),
