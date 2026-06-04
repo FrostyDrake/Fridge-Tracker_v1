@@ -1,14 +1,15 @@
 {
-  "maelk": 7,
-  "smoer": 30,
-  "ost": 14,
-  "yoghurt": 10,
-  "kylling": 2,
-  "oksekoed": 3,
-  "fisk": 1,
-  "aeg": 21,
-  "salat": 5,
-  "tomat": 7,
-  "agurk": 5,
-  "broed": 4
+  "krydderi og urter": 1095,
+  "kød": 4,
+  "fjerkræ": 3,
+  "fisk og skaldyr": 2,
+  "mejeri": 14,
+  "grøntsager": 14,
+  "frugt": 10,
+  "drikkevare": 91,
+  "korn": 365,
+  "bælgfrugter": 730,
+  "nødder og frø": 273,
+  "fedtstoffer og olier": 365,
+  "slik og sukker": 365
 }
