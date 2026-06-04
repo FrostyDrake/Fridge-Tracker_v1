@@ -316,20 +316,34 @@ class FridgeOverviewScreen extends StatelessWidget {
       return Colors.grey;
     }
 
-    final today = DateTime.now();
-    final currentDate = DateTime(today.year, today.month, today.day);
-    final itemDate = DateTime(date.year, date.month, date.day);
-    final daysLeft = itemDate.difference(currentDate).inDays;
+    final daysLeft = _daysLeft(date);
 
     if (daysLeft <= 3) return Colors.red;
     if (daysLeft <= 7) return Colors.orange;
     return Colors.green;
   }
 
+  int _daysLeft(DateTime date) {
+    final today = DateTime.now();
+    final currentDate = DateTime(today.year, today.month, today.day);
+    final itemDate = DateTime(date.year, date.month, date.day);
+    return itemDate.difference(currentDate).inDays;
+  }
+
+  String _expiryStatus(DateTime? date) {
+    if (date == null) return 'Ingen dato';
+
+    final daysLeft = _daysLeft(date);
+    if (daysLeft < 0) return 'Udløbet';
+    if (daysLeft == 0) return 'Udløber i dag';
+    if (daysLeft == 1) return 'Udløber i morgen';
+    return '$daysLeft dage tilbage';
+  }
+
   String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day-$month-${date.year}';
   }
 
   String _dateText(DateTime? date) {
@@ -439,23 +453,74 @@ class FridgeOverviewScreen extends StatelessWidget {
   }
 
   Widget _productDropdown(BuildContext context, _FridgeItem item) {
+    final expiryColor = _expiryColor(item.expiryDate);
+
     return Dismissible(
       key: ValueKey(item.id),
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
+        margin: const EdgeInsets.symmetric(vertical: 2),
+        decoration: BoxDecoration(
+          color: Colors.red.shade600,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       onDismissed: (_) => _deleteItemWithUndo(context, item),
       child: Card(
+        clipBehavior: Clip.antiAlias,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: Theme.of(context).dividerColor),
+        ),
         child: ExpansionTile(
-          leading: CircleAvatar(backgroundColor: _expiryColor(item.expiryDate)),
-          title: Text(item.name),
-          subtitle: Text('Udløber: ${_dateText(item.expiryDate)}'),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          leading: Container(
+            width: 12,
+            height: 44,
+            decoration: BoxDecoration(
+              color: expiryColor,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
+          title: Text(
+            item.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                _miniInfoChip(
+                  context,
+                  Icons.event_outlined,
+                  _dateText(item.expiryDate),
+                ),
+                _miniInfoChip(
+                  context,
+                  Icons.category_outlined,
+                  item.category,
+                ),
+              ],
+            ),
+          ),
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
           children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: _statusChip(
+                text: _expiryStatus(item.expiryDate),
+                color: expiryColor,
+              ),
+            ),
+            const SizedBox(height: 12),
             _detailRow(
               label: 'Navn',
               value: item.name,
@@ -491,6 +556,52 @@ class FridgeOverviewScreen extends StatelessWidget {
     );
   }
 
+  Widget _miniInfoChip(BuildContext context, IconData icon, String text) {
+    final color = Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Text(
+              text,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 12, color: color),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statusChip({required String text, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        border: Border.all(color: color.withOpacity(0.4)),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
   Widget _detailRow({
     required String label,
     required String value,
@@ -498,34 +609,39 @@ class FridgeOverviewScreen extends StatelessWidget {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 92,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              constraints: const BoxConstraints(minHeight: 44),
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.black26),
-                borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 92,
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
-              child: Text(value),
             ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: onEdit,
-            tooltip: 'Rediger $label',
-            icon: const Icon(Icons.edit_outlined),
-          ),
-        ],
+            Expanded(
+              child: Text(
+                value,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            IconButton(
+              onPressed: onEdit,
+              tooltip: 'Rediger $label',
+              icon: const Icon(Icons.edit_outlined),
+            ),
+          ],
+        ),
       ),
     );
   }
