@@ -27,6 +27,49 @@ class FridgeOverviewScreen extends StatelessWidget {
     );
   }
 
+  void _showAddOptions(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.qr_code_scanner),
+                  title: const Text('Scan stregkode'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _goToBarcodeScanner(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.edit_note),
+                  title: const Text('Manuel'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _goToAddItem(context);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.document_scanner),
+                  title: const Text('Tekstscan'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _goToOcrScanner(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _goToBarcodeScanner(BuildContext context) async {
     final barcode = await Navigator.push<String>(
       context,
@@ -368,21 +411,9 @@ class FridgeOverviewScreen extends StatelessWidget {
             const Text('Tilføj din første vare for at se udløbsdatoer her.'),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () => _goToAddItem(context),
+              onPressed: () => _showAddOptions(context),
               icon: const Icon(Icons.add),
               label: const Text('Tilføj vare'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () => _goToBarcodeScanner(context),
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan stregkode'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: () => _goToOcrScanner(context),
-              icon: const Icon(Icons.document_scanner),
-              label: const Text('Scan varetekst'),
             ),
             if (kDebugMode) ...[
               const SizedBox(height: 16),
@@ -506,16 +537,6 @@ class FridgeOverviewScreen extends StatelessWidget {
         title: const Text('Mit køleskab'),
         actions: [
           IconButton(
-            onPressed: () => _goToBarcodeScanner(context),
-            tooltip: 'Scan stregkode',
-            icon: const Icon(Icons.qr_code_scanner),
-          ),
-          IconButton(
-            onPressed: () => _goToOcrScanner(context),
-            tooltip: 'Scan varetekst',
-            icon: const Icon(Icons.document_scanner),
-          ),
-          IconButton(
             onPressed: _signOut,
             tooltip: 'Log ud',
             icon: const Icon(Icons.logout),
@@ -524,7 +545,7 @@ class FridgeOverviewScreen extends StatelessWidget {
       ),
       body: _itemsView(context),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _goToAddItem(context),
+        onPressed: () => _showAddOptions(context),
         tooltip: 'Tilføj vare',
         child: const Icon(Icons.add),
       ),

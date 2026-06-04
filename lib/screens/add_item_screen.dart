@@ -56,11 +56,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
           )
           .timeout(const Duration(seconds: 12));
 
-      if (!mounted) {
-        return;
+      if (mounted) {
+        Navigator.pop(context);
       }
-
-      Navigator.pop(context);
     } on TimeoutException {
       _showError(
         'Databasen svarer ikke. Tjek Firestore database og Firebase config.',
@@ -76,47 +74,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
         });
       }
     }
-  }
-
-  void _showError(String message) {
-    if (!mounted) {
-      return;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 8)),
-    );
-  }
-
-  String _firebaseErrorMessage(FirebaseException error) {
-    if (error.code == 'not-found') {
-      return 'Firestore databasen findes ikke. Opret database (default) i Firebase Console.';
-    }
-    if (error.code == 'permission-denied') {
-      return 'Ingen adgang til Firestore. Tjek security rules for den indloggede bruger.';
-    }
-    return 'Firebase fejl (${error.code}): ${error.message ?? error}';
-  }
-
-  String? _requiredText(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Feltet skal udfyldes';
-    }
-    return null;
-  }
-
-  String? _validateDate(String? value) {
-    if (_selectedExpiryDate == null) {
-      return 'Vælg en udløbsdato';
-    }
-
-    return null;
-  }
-
-  String _formatDate(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    return '$day-$month-${date.year}';
   }
 
   Future<void> _pickExpiryDate() async {
@@ -136,6 +93,46 @@ class _AddItemScreenState extends State<AddItemScreen> {
       _selectedExpiryDate = pickedDate;
       _expiryDateController.text = _formatDate(pickedDate);
     });
+  }
+
+  void _showError(String message) {
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 8)),
+    );
+  }
+
+  String _firebaseErrorMessage(FirebaseException error) {
+    if (error.code == 'not-found') {
+      return 'Firestore databasen findes ikke.';
+    }
+    if (error.code == 'permission-denied') {
+      return 'Ingen adgang til Firestore. Tjek security rules.';
+    }
+    return 'Firebase fejl (${error.code}): ${error.message ?? error}';
+  }
+
+  String _formatDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day-$month-${date.year}';
+  }
+
+  String? _requiredText(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Feltet skal udfyldes';
+    }
+    return null;
+  }
+
+  String? _validateDate(String? value) {
+    if (_selectedExpiryDate == null) {
+      return 'Vælg en udløbsdato';
+    }
+    return null;
   }
 
   @override
