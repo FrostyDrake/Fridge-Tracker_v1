@@ -9,15 +9,24 @@ import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
 
-class FridgeOverviewScreen extends StatelessWidget {
+class FridgeOverviewScreen extends StatefulWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
 
   final String userId;
 
+  @override
+  State<FridgeOverviewScreen> createState() => _FridgeOverviewScreenState();
+}
+
+class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   static final _authService = AuthService();
   static final _itemService = FridgeItemService();
   static final _productService = OpenFoodFactsService();
 
+  _ExpiryFilter _expiryFilter = _ExpiryFilter.all;
+  String? _categoryFilter;
+
+  String get userId => widget.userId;
   String get _itemsPath => 'users/$userId/fridges/default/items';
 
   void _goToAddItem(BuildContext context) {
@@ -360,22 +369,345 @@ class FridgeOverviewScreen extends StatelessWidget {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final items =
+        final allItems =
             snapshot.data?.docs.map(_FridgeItem.fromDoc).toList() ?? [];
-        if (items.isEmpty) {
+        if (allItems.isEmpty) {
           return _emptyView(context);
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: items.length,
-          separatorBuilder: (_, index) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            return _productDropdown(context, items[index]);
+        final categories = _availableCategories(allItems);
+        final activeCategory = categories.contains(_categoryFilter)
+            ? _categoryFilter
+            : null;
+        final items = _filteredAndSortedItems(
+          allItems,
+          category: activeCategory,
+        );
+
+        return Column(
+          children: [
+            _filterBar(
+              context,
+              categories: categories,
+              activeCategory: activeCategory,
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? _filteredEmptyView(context)
+                  : ListView.separated(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: items.length,
+                      separatorBuilder: (_, index) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        return _productDropdown(context, items[index]);
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  List<String> _availableCategories(List<_FridgeItem> items) {
+    final categories = <String>{};
+    for (final item in items) {
+      final category = item.category.trim();
+      if (category.isNotEmpty) {
+        categories.add(category);
+      }
+    }
+
+    return categories.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+  }
+
+  List<_FridgeItem> _filteredAndSortedItems(
+    List<_FridgeItem> items, {
+    required String? category,
+  }) {
+    final filtered = items.where((item) {
+      final matchesStatus = _matchesExpiryFilter(item);
+      final matchesCategory =
+          category == null || item.category.trim() == category;
+      return matchesStatus && matchesCategory;
+    }).toList();
+
+    filtered.sort(_compareByExpiryDate);
+    return filtered;
+  }
+
+  bool _matchesExpiryFilter(_FridgeItem item) {
+    switch (_expiryFilter) {
+      case _ExpiryFilter.all:
+        return true;
+      case _ExpiryFilter.red:
+        return item.expiryDate != null && _daysLeft(item.expiryDate!) <= 3;
+      case _ExpiryFilter.orange:
+        if (item.expiryDate == null) return false;
+        final daysLeft = _daysLeft(item.expiryDate!);
+        return daysLeft > 3 && daysLeft <= 7;
+      case _ExpiryFilter.green:
+        return item.expiryDate != null && _daysLeft(item.expiryDate!) > 7;
+    }
+  }
+
+  int _compareByExpiryDate(_FridgeItem a, _FridgeItem b) {
+    final aDate = a.expiryDate;
+    final bDate = b.expiryDate;
+
+    if (aDate == null && bDate == null) {
+      return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+    }
+    if (aDate == null) return 1;
+    if (bDate == null) return -1;
+
+    final dateOrder = aDate.compareTo(bDate);
+    if (dateOrder != 0) return dateOrder;
+    return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+  }
+
+  Widget _filterBar(
+    BuildContext context, {
+    required List<String> categories,
+    required String? activeCategory,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasActiveFilters =
+        _expiryFilter != _ExpiryFilter.all || activeCategory != null;
+
+    return Material(
+      color: colorScheme.surface,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Theme.of(context).dividerColor),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                _activeFilterText(activeCategory),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: hasActiveFilters
+                      ? colorScheme.onSurface
+                      : colorScheme.onSurfaceVariant,
+                  fontWeight:
+                      hasActiveFilters ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ),
+            IconButton(
+              onPressed: () => _showFilterSheet(
+                context,
+                categories: categories,
+                activeCategory: activeCategory,
+              ),
+              tooltip: 'Filtrer varer',
+              icon: Icon(
+                hasActiveFilters
+                    ? Icons.filter_alt
+                    : Icons.filter_alt_outlined,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _activeFilterText(String? activeCategory) {
+    final parts = <String>[];
+    if (_expiryFilter != _ExpiryFilter.all) {
+      parts.add(_expiryFilterLabel(_expiryFilter));
+    }
+    if (activeCategory != null) {
+      parts.add(activeCategory);
+    }
+
+    return parts.isEmpty ? 'Alle varer' : 'Filter: ${parts.join(' · ')}';
+  }
+
+  Future<void> _showFilterSheet(
+    BuildContext context, {
+    required List<String> categories,
+    required String? activeCategory,
+  }) {
+    var selectedStatus = _expiryFilter;
+    var selectedCategory = activeCategory;
+
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, sheetSetState) {
+            void updateStatus(_ExpiryFilter value) {
+              sheetSetState(() => selectedStatus = value);
+              setState(() => _expiryFilter = value);
+            }
+
+            void updateCategory(String? value) {
+              sheetSetState(() => selectedCategory = value);
+              setState(() => _categoryFilter = value);
+            }
+
+            return SafeArea(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Filtrer varer',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          sheetSetState(() {
+                            selectedStatus = _ExpiryFilter.all;
+                            selectedCategory = null;
+                          });
+                          setState(() {
+                            _expiryFilter = _ExpiryFilter.all;
+                            _categoryFilter = null;
+                          });
+                        },
+                        child: const Text('Nulstil'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Status',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  _statusFilterTile(
+                    value: _ExpiryFilter.all,
+                    groupValue: selectedStatus,
+                    label: 'Alle',
+                    icon: Icons.inventory_2_outlined,
+                    color: Colors.grey,
+                    onChanged: updateStatus,
+                  ),
+                  _statusFilterTile(
+                    value: _ExpiryFilter.red,
+                    groupValue: selectedStatus,
+                    label: 'R\u00f8d',
+                    icon: Icons.circle,
+                    color: Colors.red,
+                    onChanged: updateStatus,
+                  ),
+                  _statusFilterTile(
+                    value: _ExpiryFilter.orange,
+                    groupValue: selectedStatus,
+                    label: 'Orange',
+                    icon: Icons.circle,
+                    color: Colors.orange,
+                    onChanged: updateStatus,
+                  ),
+                  _statusFilterTile(
+                    value: _ExpiryFilter.green,
+                    groupValue: selectedStatus,
+                    label: 'Gr\u00f8n',
+                    icon: Icons.circle,
+                    color: Colors.green,
+                    onChanged: updateStatus,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Kategori',
+                    style: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  _categoryFilterTile(
+                    value: null,
+                    selectedValue: selectedCategory,
+                    title: const Text('Alle kategorier'),
+                    icon: Icons.category_outlined,
+                    onTap: updateCategory,
+                  ),
+                  ...categories.map(
+                    (category) => _categoryFilterTile(
+                      value: category,
+                      selectedValue: selectedCategory,
+                      title: Text(
+                        category,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      icon: Icons.label_outline,
+                      onTap: updateCategory,
+                    ),
+                  ),
+                ],
+              ),
+            );
           },
         );
       },
     );
+  }
+
+  Widget _categoryFilterTile({
+    required String? value,
+    required String? selectedValue,
+    required Widget title,
+    required IconData icon,
+    required ValueChanged<String?> onTap,
+  }) {
+    final selected = value == selectedValue;
+
+    return ListTile(
+      onTap: () => onTap(value),
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon),
+      title: title,
+      trailing: selected ? const Icon(Icons.check) : null,
+      selected: selected,
+    );
+  }
+
+  Widget _statusFilterTile({
+    required _ExpiryFilter value,
+    required _ExpiryFilter groupValue,
+    required String label,
+    required IconData icon,
+    required Color color,
+    required ValueChanged<_ExpiryFilter> onChanged,
+  }) {
+    final selected = value == groupValue;
+
+    return ListTile(
+      onTap: () => onChanged(value),
+      contentPadding: EdgeInsets.zero,
+      leading: Icon(icon, color: color),
+      title: Text(label),
+      trailing: selected ? const Icon(Icons.check) : null,
+      selected: selected,
+    );
+  }
+
+  String _expiryFilterLabel(_ExpiryFilter filter) {
+    switch (filter) {
+      case _ExpiryFilter.all:
+        return 'Alle';
+      case _ExpiryFilter.red:
+        return 'R\u00f8d';
+      case _ExpiryFilter.orange:
+        return 'Orange';
+      case _ExpiryFilter.green:
+        return 'Gr\u00f8n';
+    }
   }
 
   Widget _emptyView(BuildContext context) {
@@ -418,6 +750,37 @@ class FridgeOverviewScreen extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Text(message, textAlign: TextAlign.center),
+      ),
+    );
+  }
+
+  Widget _filteredEmptyView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.filter_alt_off_outlined, size: 48),
+            const SizedBox(height: 12),
+            const Text(
+              'Ingen varer matcher filtrene',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                setState(() {
+                  _expiryFilter = _ExpiryFilter.all;
+                  _categoryFilter = null;
+                });
+              },
+              icon: const Icon(Icons.restart_alt),
+              label: const Text('Nulstil filtre'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -638,6 +1001,8 @@ class FridgeOverviewScreen extends StatelessWidget {
     );
   }
 }
+
+enum _ExpiryFilter { all, red, orange, green }
 
 class _FridgeItem {
   const _FridgeItem({
