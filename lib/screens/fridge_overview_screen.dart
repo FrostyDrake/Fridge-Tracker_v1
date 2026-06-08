@@ -222,36 +222,6 @@ class FridgeOverviewScreen extends StatelessWidget {
     await save(newValue);
   }
 
-  Future<void> _editDate({
-    required BuildContext context,
-    required String itemId,
-    required DateTime? value,
-  }) async {
-    final newValue = await _showInputDialog(
-      context,
-      title: 'Rediger udløbsdato',
-      label: 'Udløbsdato',
-      value: value == null ? '' : _formatDate(value),
-      hintText: 'fx 2026-06-01',
-      keyboardType: TextInputType.datetime,
-    );
-
-    if (newValue == null || newValue.isEmpty) {
-      return;
-    }
-    if (!context.mounted) {
-      return;
-    }
-
-    final date = DateTime.tryParse(newValue);
-    if (date == null) {
-      _showSnackBar(context, 'Brug datoformatet YYYY-MM-DD');
-      return;
-    }
-
-    await _updateItem(context, itemId, expiryDate: date);
-  }
-
   Future<String?> _showInputDialog(
     BuildContext context, {
     required String title,
@@ -562,7 +532,7 @@ class FridgeOverviewScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.06),
+        color: Colors.black.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -587,8 +557,8 @@ class FridgeOverviewScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        border: Border.all(color: color.withOpacity(0.4)),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -612,7 +582,7 @@ class FridgeOverviewScreen extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.03),
+          color: Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.black12),
         ),
