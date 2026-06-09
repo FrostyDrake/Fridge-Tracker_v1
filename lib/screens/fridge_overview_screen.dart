@@ -3,11 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/expiry_notification_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
 import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
+import 'recipe_suggestions_screen.dart';
 
 class FridgeOverviewScreen extends StatefulWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
@@ -21,6 +23,7 @@ class FridgeOverviewScreen extends StatefulWidget {
 class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   static final _authService = AuthService();
   static final _itemService = FridgeItemService();
+  static final _notificationService = ExpiryNotificationService.instance;
   static final _productService = OpenFoodFactsService();
 
   _ExpiryFilter _expiryFilter = _ExpiryFilter.all;
@@ -34,6 +37,35 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       context,
       MaterialPageRoute(builder: (_) => AddItemScreen(userId: userId)),
     );
+  }
+
+  void _goToRecipeSuggestions(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecipeSuggestionsScreen(userId: userId),
+      ),
+    );
+  }
+
+  void _syncExpiryNotifications(List<_FridgeItem> items) {
+    final notificationItems = items
+        .where((item) => item.expiryDate != null)
+        .map(
+          (item) => ExpiryNotificationItem(
+            id: item.id,
+            name: item.name,
+            expiryDate: item.expiryDate!,
+          ),
+        )
+        .toList();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _notificationService.syncExpiryReminders(notificationItems);
+    });
   }
 
   void _showAddOptions(BuildContext context) {
@@ -371,6 +403,8 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
 
         final allItems =
             snapshot.data?.docs.map(_FridgeItem.fromDoc).toList() ?? [];
+        _syncExpiryNotifications(allItems);
+
         if (allItems.isEmpty) {
           return _emptyView(context);
         }
@@ -497,8 +531,9 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                   color: hasActiveFilters
                       ? colorScheme.onSurface
                       : colorScheme.onSurfaceVariant,
-                  fontWeight:
-                      hasActiveFilters ? FontWeight.w700 : FontWeight.w500,
+                  fontWeight: hasActiveFilters
+                      ? FontWeight.w700
+                      : FontWeight.w500,
                 ),
               ),
             ),
@@ -510,9 +545,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
               ),
               tooltip: 'Filtrer varer',
               icon: Icon(
-                hasActiveFilters
-                    ? Icons.filter_alt
-                    : Icons.filter_alt_outlined,
+                hasActiveFilters ? Icons.filter_alt : Icons.filter_alt_outlined,
               ),
             ),
           ],
@@ -589,10 +622,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Status',
-                    style: Theme.of(context).textTheme.labelLarge,
-                  ),
+                  Text('Status', style: Theme.of(context).textTheme.labelLarge),
                   _statusFilterTile(
                     value: _ExpiryFilter.all,
                     groupValue: selectedStatus,
@@ -641,10 +671,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                     (category) => _categoryFilterTile(
                       value: category,
                       selectedValue: selectedCategory,
-                      title: Text(
-                        category,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      title: Text(category, overflow: TextOverflow.ellipsis),
                       icon: Icons.label_outline,
                       onTap: updateCategory,
                     ),
@@ -835,11 +862,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                   Icons.event_outlined,
                   _dateText(item.expiryDate),
                 ),
-                _miniInfoChip(
-                  context,
-                  Icons.category_outlined,
-                  item.category,
-                ),
+                _miniInfoChip(context, Icons.category_outlined, item.category),
               ],
             ),
           ),
@@ -962,11 +985,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
               ),
             ),
             Expanded(
-              child: Text(
-                value,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(value, maxLines: 2, overflow: TextOverflow.ellipsis),
             ),
             IconButton(
               onPressed: onEdit,
@@ -985,6 +1004,11 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       appBar: AppBar(
         title: const Text('Mit køleskab'),
         actions: [
+          IconButton(
+            onPressed: () => _goToRecipeSuggestions(context),
+            tooltip: 'Opskrifter',
+            icon: const Icon(Icons.restaurant_menu),
+          ),
           IconButton(
             onPressed: _signOut,
             tooltip: 'Log ud',

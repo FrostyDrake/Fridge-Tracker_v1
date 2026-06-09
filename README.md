@@ -101,3 +101,4 @@ households
 - [Projektoverblik](docs/project-overview.md)
 - [Sprint 1-backlog](docs/sprint-1.md)
 - [Andrei dag 1-5](docs/andrei-day-1-5.md)
+- [Andrei sprint 2](docs/andrei-sprint-2.md)
