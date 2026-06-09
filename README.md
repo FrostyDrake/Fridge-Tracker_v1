@@ -55,21 +55,38 @@ Sprint 1 user stories:
 
 ## Datamodel
 
-```text
-User
-└── Fridge
-    └── FridgeItem
-        ├── id
-        ├── name
-        ├── category
-        ├── addedDate
-        ├── expiryDate
-        ├── source
-        └── imageUrl
 ```
+User
+├── Fridge
+│   └── FridgeItem
+│       ├── id
+│       ├── name
+│       ├── category
+│       ├── addedDate
+│       ├── expiryDate
+│       ├── source
+│       └── imageUrl
+└── household
+    ├── name
+	└── role
 
-Strukturen skal kunne understøtte et senere "delt køleskab" uden en fuld
-omskrivning.
+households
+├── name
+├── createdAt
+├── members
+│    └── member
+│         ├── role
+│         └── email
+└── sharedFridge
+    └── FridgeItem
+    ├── id
+    ├── name
+    ├── category
+    ├── addedDate
+    ├── expiryDate
+    ├── source
+    └── imageUrl
+```
 
 ## Farvekodning for udløb
 
