@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'firebase_options.dart';
 import 'screens/fridge_overview_screen.dart';
 import 'screens/login_screen.dart';
+import 'services/expiry_notification_service.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await ExpiryNotificationService.instance.initialize();
   runApp(MyApp());
 }
 
