@@ -11,6 +11,7 @@ import 'barcode_confirmation_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
 import 'recipe_suggestions_screen.dart';
+import 'shared_fridge_members_screen.dart';
 
 class FridgeOverviewScreen extends StatefulWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
@@ -46,6 +47,13 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       MaterialPageRoute(
         builder: (_) => RecipeSuggestionsScreen(userId: userId),
       ),
+    );
+  }
+
+  void _goToSharedFridge(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SharedFridgeMembersScreen()),
     );
   }
 
@@ -411,7 +419,12 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
         _syncExpiryNotifications(allItems);
 
         if (allItems.isEmpty) {
-          return _emptyView(context);
+          return Column(
+            children: [
+              _sharedFridgeCard(context),
+              Expanded(child: _emptyView(context)),
+            ],
+          );
         }
 
         final categories = _availableCategories(allItems);
@@ -425,6 +438,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
 
         return Column(
           children: [
+            _sharedFridgeCard(context),
             _filterBar(
               context,
               categories: categories,
@@ -443,6 +457,35 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                     ),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _sharedFridgeCard(BuildContext context) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: SharedFridgeMockState.sharedEmail,
+      builder: (context, sharedEmail, _) {
+        if (sharedEmail == null) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.groups_outlined),
+              title: const Text('F\u00e6lles k\u00f8leskab'),
+              subtitle: Text('Delt med $sharedEmail'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _goToSharedFridge(context),
+            ),
+          ),
         );
       },
     );
@@ -1009,6 +1052,11 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       appBar: AppBar(
         title: const Text('Mit køleskab'),
         actions: [
+          IconButton(
+            onPressed: () => _goToSharedFridge(context),
+            tooltip: 'Delt k\u00f8leskab',
+            icon: const Icon(Icons.groups_outlined),
+          ),
           IconButton(
             onPressed: () => _goToRecipeSuggestions(context),
             tooltip: 'Opskrifter',
