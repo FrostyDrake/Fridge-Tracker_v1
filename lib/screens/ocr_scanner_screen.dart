@@ -26,6 +26,7 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
   final _fridgeItemService = FridgeItemService();
 
   OcrProductSuggestion? _suggestion;
+  DateTime? _selectedExpiryDate;
   bool _isScanning = false;
   bool _isSaving = false;
   String? _errorMessage;
@@ -79,18 +80,44 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
   }
 
   void _applySuggestion(OcrProductSuggestion suggestion) {
+    final expiryDate =
+        suggestion.expiryDate ?? DateTime.now().add(const Duration(days: 7));
+
     setState(() {
       _suggestion = suggestion;
+      _selectedExpiryDate = expiryDate;
       _nameController.text = suggestion.name;
       _categoryController.text = suggestion.category;
-      _expiryDateController.text = suggestion.expiryDate == null
-          ? _formatDate(DateTime.now().add(const Duration(days: 7)))
-          : _formatDate(suggestion.expiryDate!);
+      _expiryDateController.text = _formatDate(expiryDate);
+    });
+  }
+
+  Future<void> _pickExpiryDate() async {
+    final today = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedExpiryDate ?? today,
+      firstDate: DateTime(today.year - 1),
+      lastDate: DateTime(today.year + 5),
+    );
+
+    if (pickedDate == null) {
+      return;
+    }
+
+    setState(() {
+      _selectedExpiryDate = pickedDate;
+      _expiryDateController.text = _formatDate(pickedDate);
     });
   }
 
   Future<void> _saveItem() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final expiryDate = _selectedExpiryDate;
+    if (expiryDate == null) {
       return;
     }
 
@@ -104,7 +131,7 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
         userId: widget.userId,
         name: _nameController.text.trim(),
         category: _categoryController.text.trim(),
-        expiryDate: DateTime.parse(_expiryDateController.text.trim()),
+        expiryDate: expiryDate,
         source: 'scan',
       );
 
@@ -131,9 +158,9 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
   }
 
   String _formatDate(DateTime date) {
-    final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
-    return '${date.year}-$month-$day';
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day-$month-${date.year}';
   }
 
   String? _requiredText(String? value) {
@@ -144,14 +171,8 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
   }
 
   String? _validateDate(String? value) {
-    final requiredError = _requiredText(value);
-    if (requiredError != null) {
-      return requiredError;
-    }
-
-    final date = DateTime.tryParse(value!.trim());
-    if (date == null) {
-      return 'Brug formatet YYYY-MM-DD';
+    if (_selectedExpiryDate == null) {
+      return 'V\u00e6lg en udl\u00f8bsdato';
     }
 
     return null;
@@ -206,6 +227,7 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                   },
                   rawText: suggestion.rawText,
                   isSaving: _isSaving,
+                  onPickExpiryDate: _pickExpiryDate,
                   onRetake: _scanImage,
                   onSave: _saveItem,
                   validateRequiredText: _requiredText,
@@ -239,6 +261,7 @@ class _ConfirmationForm extends StatelessWidget {
     required this.onUseAlternativeName,
     required this.rawText,
     required this.isSaving,
+    required this.onPickExpiryDate,
     required this.onRetake,
     required this.onSave,
     required this.validateRequiredText,
@@ -255,6 +278,7 @@ class _ConfirmationForm extends StatelessWidget {
   final ValueChanged<String> onUseAlternativeName;
   final String rawText;
   final bool isSaving;
+  final VoidCallback onPickExpiryDate;
   final VoidCallback onRetake;
   final VoidCallback onSave;
   final String? Function(String?) validateRequiredText;
@@ -267,14 +291,37 @@ class _ConfirmationForm extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Er dette korrekt?',
-            style: Theme.of(context).textTheme.titleLarge,
+          Row(
+            children: [
+              const Icon(Icons.document_scanner_outlined),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Tjek varen f\u00f8r du gemmer',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
-          Text(confidenceText),
-          const SizedBox(height: 4),
-          Text(reason),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  confidenceText,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 4),
+                Text(reason),
+              ],
+            ),
+          ),
           if (alternativeNames.isNotEmpty) ...[
             const SizedBox(height: 12),
             Wrap(
@@ -310,12 +357,13 @@ class _ConfirmationForm extends StatelessWidget {
           const SizedBox(height: 16),
           TextFormField(
             controller: expiryDateController,
-            keyboardType: TextInputType.datetime,
+            readOnly: true,
+            onTap: onPickExpiryDate,
             decoration: const InputDecoration(
               labelText: 'Udløbsdato',
-              helperText: 'Ret datoen hvis OCR læste forkert',
-              hintText: 'fx 2026-06-01',
+              hintText: 'V\u00e6lg dato',
               border: OutlineInputBorder(),
+              suffixIcon: Icon(Icons.calendar_today),
             ),
             validator: validateDate,
           ),

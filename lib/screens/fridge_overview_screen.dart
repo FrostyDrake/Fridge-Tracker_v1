@@ -7,6 +7,7 @@ import '../services/expiry_notification_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
 import 'add_item_screen.dart';
+import 'barcode_confirmation_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
 import 'recipe_suggestions_screen.dart';
@@ -121,7 +122,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       return;
     }
 
-    await _addScannedBarcode(context, barcode);
+    await _confirmScannedBarcode(context, barcode);
   }
 
   Future<void> _goToOcrScanner(BuildContext context) async {
@@ -143,33 +144,37 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return _authService.signOut();
   }
 
-  Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
+  Future<void> _confirmScannedBarcode(
+    BuildContext context,
+    String barcode,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       SnackBar(content: Text('Henter produkt for stregkode $barcode...')),
     );
 
     final product = await _findProduct(barcode);
+    messenger.hideCurrentSnackBar();
 
-    try {
-      await _itemService.addItem(
-        userId: userId,
-        name: product.name,
-        category: product.category,
-        expiryDate: DateTime.now().add(const Duration(days: 7)),
-        source: 'barcode',
-        imageUrl: product.imageUrl,
-      );
-
-      messenger.showSnackBar(
-        SnackBar(content: Text('${product.name} blev tilføjet')),
-      );
-    } catch (error) {
-      if (!context.mounted) {
-        return;
-      }
-      _showSnackBar(context, 'Produktet kunne ikke tilføjes: $error');
+    if (!context.mounted) {
+      return;
     }
+
+    final savedName = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            BarcodeConfirmationScreen(userId: userId, product: product),
+      ),
+    );
+
+    if (!context.mounted || savedName == null) {
+      return;
+    }
+
+    messenger.showSnackBar(
+      SnackBar(content: Text('$savedName blev tilf\u00f8jet')),
+    );
   }
 
   Future<OpenFoodFactsProduct> _findProduct(String barcode) async {
