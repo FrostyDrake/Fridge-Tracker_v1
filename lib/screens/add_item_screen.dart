@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
+import '../services/default_expiry_service.dart';
 import '../services/fridge_item_service.dart';
 
 class AddItemScreen extends StatefulWidget {
@@ -19,13 +20,24 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
   final _expiryDateController = TextEditingController();
+  final _expiryService = DefaultExpiryService.instance;
   final _service = FridgeItemService();
 
   DateTime? _selectedExpiryDate;
+  bool _didManuallyPickExpiry = false;
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_applyDefaultExpiryDate);
+    _categoryController.addListener(_applyDefaultExpiryDate);
+  }
+
+  @override
   void dispose() {
+    _nameController.removeListener(_applyDefaultExpiryDate);
+    _categoryController.removeListener(_applyDefaultExpiryDate);
     _nameController.dispose();
     _categoryController.dispose();
     _expiryDateController.dispose();
@@ -90,8 +102,35 @@ class _AddItemScreenState extends State<AddItemScreen> {
     }
 
     setState(() {
+      _didManuallyPickExpiry = true;
       _selectedExpiryDate = pickedDate;
       _expiryDateController.text = _formatDate(pickedDate);
+    });
+  }
+
+  Future<void> _applyDefaultExpiryDate() async {
+    if (_didManuallyPickExpiry) {
+      return;
+    }
+
+    final name = _nameController.text.trim();
+    final category = _categoryController.text.trim();
+    if (name.isEmpty && category.isEmpty) {
+      return;
+    }
+
+    final expiryDate = await _expiryService.expiryDateFor(
+      name: name,
+      category: category,
+    );
+
+    if (!mounted || _didManuallyPickExpiry) {
+      return;
+    }
+
+    setState(() {
+      _selectedExpiryDate = expiryDate;
+      _expiryDateController.text = _formatDate(expiryDate);
     });
   }
 

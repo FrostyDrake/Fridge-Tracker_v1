@@ -44,6 +44,7 @@ dependencies:
   flutter_local_notifications: ^22.0.0
   timezone: ^0.11.0
   flutter_timezone: ^5.1.0
+  firebase_messaging: ^16.3.0
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +67,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - data/default_expiry_days.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -117,7 +117,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             bottom: 32,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.65),
+                color: Colors.black.withValues(alpha: 0.65),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Padding(

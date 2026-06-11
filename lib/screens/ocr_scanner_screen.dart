@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../services/default_expiry_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/ocr_product_service.dart';
 
@@ -21,12 +22,14 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
   final _nameController = TextEditingController();
   final _categoryController = TextEditingController();
   final _expiryDateController = TextEditingController();
+  final _expiryService = DefaultExpiryService.instance;
   final _imagePicker = ImagePicker();
   final _ocrService = OcrProductService();
   final _fridgeItemService = FridgeItemService();
 
   OcrProductSuggestion? _suggestion;
   DateTime? _selectedExpiryDate;
+  bool _didManuallyPickExpiry = false;
   bool _isScanning = false;
   bool _isSaving = false;
   String? _errorMessage;
@@ -65,7 +68,7 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
       }
 
       final suggestion = await _ocrService.analyzeImage(image.path);
-      _applySuggestion(suggestion);
+      await _applySuggestion(suggestion);
     } catch (error) {
       setState(() {
         _errorMessage = 'Teksten kunne ikke læses: $error';
@@ -79,12 +82,17 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
     }
   }
 
-  void _applySuggestion(OcrProductSuggestion suggestion) {
+  Future<void> _applySuggestion(OcrProductSuggestion suggestion) async {
     final expiryDate =
-        suggestion.expiryDate ?? DateTime.now().add(const Duration(days: 7));
+        suggestion.expiryDate ??
+        await _expiryService.expiryDateFor(
+          name: suggestion.name,
+          category: suggestion.category,
+        );
 
     setState(() {
       _suggestion = suggestion;
+      _didManuallyPickExpiry = suggestion.expiryDate != null;
       _selectedExpiryDate = expiryDate;
       _nameController.text = suggestion.name;
       _categoryController.text = suggestion.category;
@@ -106,9 +114,35 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
     }
 
     setState(() {
+      _didManuallyPickExpiry = true;
       _selectedExpiryDate = pickedDate;
       _expiryDateController.text = _formatDate(pickedDate);
     });
+  }
+
+  Future<void> _refreshDefaultExpiryDate() async {
+    if (_didManuallyPickExpiry) {
+      return;
+    }
+
+    final expiryDate = await _expiryService.expiryDateFor(
+      name: _nameController.text.trim(),
+      category: _categoryController.text.trim(),
+    );
+
+    if (!mounted || _didManuallyPickExpiry) {
+      return;
+    }
+
+    setState(() {
+      _selectedExpiryDate = expiryDate;
+      _expiryDateController.text = _formatDate(expiryDate);
+    });
+  }
+
+  void _useAlternativeName(String name) {
+    _nameController.text = name;
+    unawaited(_refreshDefaultExpiryDate());
   }
 
   Future<void> _saveItem() async {
@@ -222,9 +256,7 @@ class _OcrScannerScreenState extends State<OcrScannerScreen> {
                   confidenceText: _confidenceText(suggestion.confidence),
                   reason: suggestion.reason,
                   alternativeNames: suggestion.alternativeNames,
-                  onUseAlternativeName: (name) {
-                    _nameController.text = name;
-                  },
+                  onUseAlternativeName: _useAlternativeName,
                   rawText: suggestion.rawText,
                   isSaving: _isSaving,
                   onPickExpiryDate: _pickExpiryDate,

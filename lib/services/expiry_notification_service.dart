@@ -118,6 +118,39 @@ class ExpiryNotificationService {
     debugPrint('Expiry notifications synced: ${plans.length} reminders.');
   }
 
+  Future<void> showImmediate({
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    await initialize();
+    if (_initializationFailed || !_supportsPluginInitialization) {
+      return;
+    }
+
+    await _plugin.show(
+      id: _stableHash('$title:$body:${DateTime.now().millisecondsSinceEpoch}'),
+      title: title,
+      body: body,
+      payload: payload,
+      notificationDetails: const NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          _channelName,
+          channelDescription: _channelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+        web: WebNotificationDetails(),
+      ),
+    );
+  }
+
   Future<bool> requestPermissions() async {
     await initialize();
     if (_initializationFailed) {

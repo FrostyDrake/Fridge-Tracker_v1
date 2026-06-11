@@ -97,10 +97,37 @@ service cloud.firestore {
       && request.resource.data.sharedAt is timestamp;
     }
 
+    function validFcmTokenDocument() {
+      return request.resource.data.keys().hasOnly([
+        'token',
+        'platform',
+        'updatedAt',
+      ])
+      && request.resource.data.token is string
+      && request.resource.data.token.size() > 0
+      && request.resource.data.platform is string
+      && request.resource.data.platform in [
+        'android',
+        'ios',
+        'web',
+        'macos',
+        'windows',
+        'linux',
+        'fuchsia',
+      ]
+      && request.resource.data.updatedAt is timestamp;
+    }
+
     match /users/{userId} {
       allow read: if signedIn();
       allow create, update: if ownsUserDocument(userId) && validUserDocument();
       allow delete: if false;
+
+      match /fcmTokens/{tokenId} {
+        allow read, delete: if ownsUserDocument(userId);
+        allow create, update: if ownsUserDocument(userId)
+          && validFcmTokenDocument();
+      }
 
       match /sharedFridges/{ownerUserId} {
         allow read: if ownsUserDocument(userId);

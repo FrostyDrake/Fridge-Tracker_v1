@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/default_expiry_service.dart';
 import '../services/expiry_notification_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
@@ -10,6 +11,7 @@ import '../services/shared_fridge_service.dart';
 import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
+import 'push_notifications_screen.dart';
 import 'recipe_suggestions_screen.dart';
 import 'shared_fridge_members_screen.dart';
 
@@ -24,6 +26,7 @@ class FridgeOverviewScreen extends StatefulWidget {
 
 class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   static final _authService = AuthService();
+  static final _defaultExpiryService = DefaultExpiryService.instance;
   static final _itemService = FridgeItemService();
   static final _notificationService = ExpiryNotificationService.instance;
   static final _productService = OpenFoodFactsService();
@@ -60,6 +63,15 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => SharedFridgeMembersScreen(ownerUserId: userId),
+      ),
+    );
+  }
+
+  void _goToPushNotifications(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PushNotificationsScreen(userId: userId),
       ),
     );
   }
@@ -143,7 +155,9 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   Future<void> _goToOcrScanner(BuildContext context) async {
     final didSave = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => OcrScannerScreen(userId: _fridgeOwnerId)),
+      MaterialPageRoute(
+        builder: (_) => OcrScannerScreen(userId: _fridgeOwnerId),
+      ),
     );
 
     if (!context.mounted || didSave != true) {
@@ -173,11 +187,16 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
 
     try {
+      final expiryDate = await _defaultExpiryService.expiryDateFor(
+        name: product.name,
+        category: product.category,
+      );
+
       await _itemService.addItem(
         userId: _fridgeOwnerId,
         name: product.name,
         category: product.category,
-        expiryDate: DateTime.now().add(const Duration(days: 7)),
+        expiryDate: expiryDate,
         source: 'barcode',
         imageUrl: product.imageUrl,
       );
@@ -1020,7 +1039,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.06),
+        color: Colors.black.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -1045,8 +1064,8 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        border: Border.all(color: color.withOpacity(0.4)),
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1070,7 +1089,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.03),
+          color: Colors.black.withValues(alpha: 0.03),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.black12),
         ),
@@ -1115,6 +1134,11 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
             onPressed: () => _goToRecipeSuggestions(context),
             tooltip: 'Opskrifter',
             icon: const Icon(Icons.restaurant_menu),
+          ),
+          IconButton(
+            onPressed: () => _goToPushNotifications(context),
+            tooltip: 'Push-notifikationer',
+            icon: const Icon(Icons.notifications_outlined),
           ),
           IconButton(
             onPressed: _signOut,
