@@ -66,9 +66,7 @@ User
 │       ├── expiryDate
 │       ├── source
 │       └── imageUrl
-└── household
-    ├── householdName
-	└── yourRole
+└── householdId
 
 households
 ├── name
