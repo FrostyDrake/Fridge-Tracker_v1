@@ -7,7 +7,6 @@ import '../services/expiry_notification_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
 import 'add_item_screen.dart';
-import 'barcode_confirmation_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
 import 'recipe_suggestions_screen.dart';
@@ -81,7 +80,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -92,7 +91,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                   leading: const Icon(Icons.qr_code_scanner),
                   title: const Text('Scan stregkode'),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     _goToBarcodeScanner(context);
                   },
                 ),
@@ -100,7 +99,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                   leading: const Icon(Icons.edit_note),
                   title: const Text('Manuel'),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     _goToAddItem(context);
                   },
                 ),
@@ -108,7 +107,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                   leading: const Icon(Icons.document_scanner),
                   title: const Text('Tekstscan'),
                   onTap: () {
-                    Navigator.pop(context);
+                    Navigator.pop(sheetContext);
                     _goToOcrScanner(context);
                   },
                 ),
@@ -130,7 +129,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       return;
     }
 
-    await _confirmScannedBarcode(context, barcode);
+    await _addScannedBarcode(context, barcode);
   }
 
   Future<void> _goToOcrScanner(BuildContext context) async {
@@ -152,10 +151,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return _authService.signOut();
   }
 
-  Future<void> _confirmScannedBarcode(
-    BuildContext context,
-    String barcode,
-  ) async {
+  Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       SnackBar(content: Text('Henter produkt for stregkode $barcode...')),
@@ -168,26 +164,33 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       return;
     }
 
-    final savedName = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(
-        builder: (_) =>
-            BarcodeConfirmationScreen(userId: userId, product: product),
-      ),
-    );
-
-    if (!context.mounted || savedName == null) {
+    try {
+      await _itemService.addItem(
+        userId: userId,
+        name: product.name,
+        category: product.category,
+        expiryDate: DateTime.now().add(const Duration(days: 7)),
+        source: 'barcode',
+        imageUrl: product.imageUrl,
+      );
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+      _showSnackBar(context, 'Produktet kunne ikke tilføjes: $error');
       return;
     }
 
     messenger.showSnackBar(
-      SnackBar(content: Text('$savedName blev tilf\u00f8jet')),
+      SnackBar(content: Text('${product.name} blev tilføjet')),
     );
   }
 
   Future<OpenFoodFactsProduct> _findProduct(String barcode) async {
     try {
-      return await _productService.findByBarcode(barcode);
+      return await _productService
+          .findByBarcode(barcode)
+          .timeout(const Duration(seconds: 8));
     } catch (_) {
       return OpenFoodFactsProduct(
         barcode: barcode,
@@ -966,7 +969,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.06),
+        color: Colors.black.withOpacity(0.06),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
@@ -991,8 +994,8 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        color: color.withOpacity(0.12),
+        border: Border.all(color: color.withOpacity(0.4)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
@@ -1016,7 +1019,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.03),
+          color: Colors.black.withOpacity(0.03),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.black12),
         ),
