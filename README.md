@@ -67,8 +67,8 @@ User
 │       ├── source
 │       └── imageUrl
 └── household
-    ├── name
-	└── role
+    ├── householdName
+	└── yourRole
 
 households
 ├── name
