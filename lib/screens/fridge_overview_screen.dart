@@ -6,6 +6,7 @@ import '../services/auth_service.dart';
 import '../services/expiry_notification_service.dart';
 import '../services/fridge_item_service.dart';
 import '../services/open_food_facts_service.dart';
+import '../services/shared_fridge_service.dart';
 import 'add_item_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'ocr_scanner_screen.dart';
@@ -26,17 +27,22 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   static final _itemService = FridgeItemService();
   static final _notificationService = ExpiryNotificationService.instance;
   static final _productService = OpenFoodFactsService();
+  static final _sharedFridgeService = SharedFridgeService();
 
   _ExpiryFilter _expiryFilter = _ExpiryFilter.all;
   String? _categoryFilter;
+  String? _activeOwnerId;
+  String? _activeFridgeLabel;
 
   String get userId => widget.userId;
-  String get _itemsPath => 'users/$userId/fridges/default/items';
+  String get _fridgeOwnerId => _activeOwnerId ?? userId;
+  String get _itemsPath => 'users/$_fridgeOwnerId/fridges/default/items';
+  bool get _isViewingSharedFridge => _fridgeOwnerId != userId;
 
   void _goToAddItem(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => AddItemScreen(userId: userId)),
+      MaterialPageRoute(builder: (_) => AddItemScreen(userId: _fridgeOwnerId)),
     );
   }
 
@@ -44,7 +50,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => RecipeSuggestionsScreen(userId: userId),
+        builder: (_) => RecipeSuggestionsScreen(userId: _fridgeOwnerId),
       ),
     );
   }
@@ -52,7 +58,9 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   void _goToSharedFridge(BuildContext context) {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SharedFridgeMembersScreen()),
+      MaterialPageRoute(
+        builder: (_) => SharedFridgeMembersScreen(ownerUserId: userId),
+      ),
     );
   }
 
@@ -135,7 +143,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   Future<void> _goToOcrScanner(BuildContext context) async {
     final didSave = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => OcrScannerScreen(userId: userId)),
+      MaterialPageRoute(builder: (_) => OcrScannerScreen(userId: _fridgeOwnerId)),
     );
 
     if (!context.mounted || didSave != true) {
@@ -166,7 +174,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
 
     try {
       await _itemService.addItem(
-        userId: userId,
+        userId: _fridgeOwnerId,
         name: product.name,
         category: product.category,
         expiryDate: DateTime.now().add(const Duration(days: 7)),
@@ -207,7 +215,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     final messenger = ScaffoldMessenger.of(context);
 
     try {
-      await _itemService.deleteItem(userId: userId, itemId: item.id);
+      await _itemService.deleteItem(userId: _fridgeOwnerId, itemId: item.id);
     } catch (error) {
       messenger.showSnackBar(
         SnackBar(content: Text('Varen kunne ikke slettes: $error')),
@@ -223,7 +231,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
           label: 'Fortryd',
           onPressed: () {
             _itemService.restoreItem(
-              userId: userId,
+              userId: _fridgeOwnerId,
               itemId: item.id,
               data: item.data,
             );
@@ -242,7 +250,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   }) async {
     try {
       await _itemService.updateItem(
-        userId: userId,
+        userId: _fridgeOwnerId,
         itemId: itemId,
         name: name,
         category: category,
@@ -408,7 +416,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
 
   Widget _itemsView(BuildContext context) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      stream: _itemService.watchItems(userId),
+      stream: _itemService.watchItems(_fridgeOwnerId),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return _messageView(_errorMessage(snapshot.error!));
@@ -466,31 +474,74 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   }
 
   Widget _sharedFridgeCard(BuildContext context) {
-    return ValueListenableBuilder<String?>(
-      valueListenable: SharedFridgeMockState.sharedEmail,
-      builder: (context, sharedEmail, _) {
-        if (sharedEmail == null) {
+    return StreamBuilder<List<SharedFridge>>(
+      stream: _sharedFridgeService.watchSharedFridges(userId),
+      builder: (context, snapshot) {
+        final sharedFridges = snapshot.data ?? [];
+        if (sharedFridges.isEmpty && !_isViewingSharedFridge) {
           return const SizedBox.shrink();
         }
 
         return Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-              side: BorderSide(color: Theme.of(context).dividerColor),
-            ),
-            child: ListTile(
-              leading: const Icon(Icons.groups_outlined),
-              title: const Text('F\u00e6lles k\u00f8leskab'),
-              subtitle: Text('Delt med $sharedEmail'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _goToSharedFridge(context),
-            ),
+          child: Column(
+            children: [
+              if (_isViewingSharedFridge)
+                _sharedFridgeTile(
+                  context,
+                  title: _activeFridgeLabel ?? 'Delt køleskab',
+                  subtitle: 'Du ser et delt køleskab',
+                  trailing: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _activeOwnerId = null;
+                        _activeFridgeLabel = null;
+                      });
+                    },
+                    child: const Text('Mit'),
+                  ),
+                ),
+              for (final fridge in sharedFridges)
+                _sharedFridgeTile(
+                  context,
+                  title: fridge.fridgeName,
+                  subtitle: 'Delt fra ${fridge.ownerEmail}',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    setState(() {
+                      _activeOwnerId = fridge.ownerId;
+                      _activeFridgeLabel =
+                          '${fridge.fridgeName} fra ${fridge.ownerEmail}';
+                    });
+                  },
+                ),
+            ],
           ),
         );
       },
+    );
+  }
+
+  Widget _sharedFridgeTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required Widget trailing,
+    VoidCallback? onTap,
+  }) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Theme.of(context).dividerColor),
+      ),
+      child: ListTile(
+        leading: const Icon(Icons.groups_outlined),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: trailing,
+        onTap: onTap,
+      ),
     );
   }
 
@@ -1053,7 +1104,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mit køleskab'),
+        title: Text(_isViewingSharedFridge ? 'Delt køleskab' : 'Mit køleskab'),
         actions: [
           IconButton(
             onPressed: () => _goToSharedFridge(context),

@@ -467,7 +467,7 @@ class _RecipeSuggestionsScreenState extends State<RecipeSuggestionsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.06),
+        color: Colors.black.withOpacity(0.06),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Row(

@@ -10,14 +10,28 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
+    function hasSharedFridgeAccess(ownerUserId) {
+      return signedIn()
+      && exists(/databases/$(database)/documents/users/$(request.auth.uid)/sharedFridges/$(ownerUserId));
+    }
+
+    function canUseFridge(ownerUserId) {
+      return ownsUserDocument(ownerUserId) || hasSharedFridgeAccess(ownerUserId);
+    }
+
     function validUserDocument() {
       return request.resource.data.keys().hasOnly([
         'email',
+        'emailLower',
         'createdAt',
         'updatedAt',
       ])
       && request.resource.data.email is string
       && request.resource.data.email.size() > 0
+      && (
+        !('emailLower' in request.resource.data)
+        || request.resource.data.emailLower is string
+      )
       && request.resource.data.createdAt is timestamp
       && request.resource.data.updatedAt is timestamp;
     }
@@ -58,19 +72,59 @@ service cloud.firestore {
       );
     }
 
+    function validSharedFridgeDocument(ownerUserId) {
+      return request.resource.data.keys().hasOnly([
+        'ownerId',
+        'ownerEmail',
+        'fridgeName',
+        'sharedAt',
+      ])
+      && request.resource.data.ownerId == ownerUserId
+      && request.resource.data.ownerEmail is string
+      && request.resource.data.fridgeName is string
+      && request.resource.data.sharedAt is timestamp;
+    }
+
+    function validMemberDocument(memberUserId) {
+      return request.resource.data.keys().hasOnly([
+        'uid',
+        'email',
+        'sharedAt',
+      ])
+      && request.resource.data.uid == memberUserId
+      && request.resource.data.email is string
+      && request.resource.data.email.size() > 0
+      && request.resource.data.sharedAt is timestamp;
+    }
+
     match /users/{userId} {
-      allow read: if ownsUserDocument(userId);
+      allow read: if signedIn();
       allow create, update: if ownsUserDocument(userId) && validUserDocument();
       allow delete: if false;
 
-      match /fridges/{fridgeId} {
+      match /sharedFridges/{ownerUserId} {
         allow read: if ownsUserDocument(userId);
+        allow create, update: if signedIn()
+          && request.auth.uid == ownerUserId
+          && validSharedFridgeDocument(ownerUserId);
+        allow delete: if ownsUserDocument(userId) || ownsUserDocument(ownerUserId);
+      }
+
+      match /fridges/{fridgeId} {
+        allow read: if canUseFridge(userId);
         allow create, update: if ownsUserDocument(userId) && validFridgeDocument();
         allow delete: if false;
 
         match /items/{itemId} {
-          allow read: if ownsUserDocument(userId);
-          allow create, update: if ownsUserDocument(userId) && validFridgeItem();
+          allow read: if canUseFridge(userId);
+          allow create, update: if canUseFridge(userId) && validFridgeItem();
+          allow delete: if canUseFridge(userId);
+        }
+
+        match /members/{memberUserId} {
+          allow read: if canUseFridge(userId);
+          allow create, update: if ownsUserDocument(userId)
+            && validMemberDocument(memberUserId);
           allow delete: if ownsUserDocument(userId);
         }
       }

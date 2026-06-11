@@ -50,6 +50,7 @@ class AuthService {
     final batch = _firestore.batch();
     batch.set(userRef, {
       'email': user.email,
+      'emailLower': user.email?.toLowerCase(),
       'createdAt': now,
       'updatedAt': now,
     }, SetOptions(merge: true));
