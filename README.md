@@ -75,15 +75,16 @@ households
 │    └── member
 │         ├── role
 │         └── email
-└── sharedFridge
-    └── FridgeItem
-    ├── id
-    ├── name
-    ├── category
-    ├── addedDate
-    ├── expiryDate
-    ├── source
-    └── imageUrl
+├── sharedFridge
+│   └── FridgeItem
+│       ├── id
+│       ├── name
+│       ├── category
+│       ├── addedDate
+│       ├── expiryDate
+│       ├── source
+│       └── imageUrl
+└── ownerId
 ```
 
 ## Farvekodning for udløb
