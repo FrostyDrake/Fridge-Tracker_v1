@@ -15,6 +15,8 @@ import 'push_notifications_screen.dart';
 import 'recipe_suggestions_screen.dart';
 import 'shared_fridge_members_screen.dart';
 
+// Hovedskærmen efter login. Den viser varer, filtre, delt køleskab,
+// tilføj/rediger/slet, opskrifter og påmindelser.
 class FridgeOverviewScreen extends StatefulWidget {
   const FridgeOverviewScreen({super.key, required this.userId});
 
@@ -25,6 +27,8 @@ class FridgeOverviewScreen extends StatefulWidget {
 }
 
 class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
+  // Services som skærmen bruger. De er static, så de ikke bliver oprettet igen
+  // ved hver rebuild.
   static final _authService = AuthService();
   static final _defaultExpiryService = DefaultExpiryService.instance;
   static final _itemService = FridgeItemService();
@@ -32,16 +36,19 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   static final _productService = OpenFoodFactsService();
   static final _sharedFridgeService = SharedFridgeService();
 
+  // Lokal UI-state for filtre og skift mellem eget og delt køleskab.
   _ExpiryFilter _expiryFilter = _ExpiryFilter.all;
   String? _categoryFilter;
   String? _activeOwnerId;
   String? _activeFridgeLabel;
 
+  // Beregnede værdier der fortæller resten af skærmen hvilket køleskab der vises.
   String get userId => widget.userId;
   String get _fridgeOwnerId => _activeOwnerId ?? userId;
   String get _itemsPath => 'users/$_fridgeOwnerId/fridges/default/items';
   bool get _isViewingSharedFridge => _fridgeOwnerId != userId;
 
+  // Åbner manuel tilføjelse for det køleskab der er aktivt.
   void _goToAddItem(BuildContext context) {
     Navigator.push(
       context,
@@ -49,6 +56,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Åbner opskriftsforslag baseret på varer i det aktive køleskab.
   void _goToRecipeSuggestions(BuildContext context) {
     Navigator.push(
       context,
@@ -58,6 +66,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Åbner skærmen hvor brugeren kan dele sit køleskab via email.
   void _goToSharedFridge(BuildContext context) {
     Navigator.push(
       context,
@@ -67,6 +76,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Åbner push-notifikationsskærmen for den indloggede bruger.
   void _goToPushNotifications(BuildContext context) {
     Navigator.push(
       context,
@@ -76,6 +86,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Omdanner indlæste varer til notifikationsplaner efter skærmen er tegnet.
   void _syncExpiryNotifications(List<_FridgeItem> items) {
     final notificationItems = items
         .where((item) => item.expiryDate != null)
@@ -96,6 +107,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     });
   }
 
+  // Viser tilføj-menuen: stregkode, manuel eller OCR.
   void _showAddOptions(BuildContext context) {
     showModalBottomSheet<void>(
       context: context,
@@ -139,6 +151,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Åbner stregkodescanner og gemmer produktet, hvis en kode findes.
   Future<void> _goToBarcodeScanner(BuildContext context) async {
     final barcode = await Navigator.push<String>(
       context,
@@ -152,6 +165,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     await _addScannedBarcode(context, barcode);
   }
 
+  // Åbner OCR-scanner. OCR-skærmen gemmer varen og returnerer true ved gem.
   Future<void> _goToOcrScanner(BuildContext context) async {
     final didSave = await Navigator.push<bool>(
       context,
@@ -169,10 +183,12 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Logger brugeren ud.
   Future<void> _signOut() {
     return _authService.signOut();
   }
 
+  // Slår stregkoden op, vælger standardudløbsdato og gemmer varen.
   Future<void> _addScannedBarcode(BuildContext context, String barcode) async {
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
@@ -213,6 +229,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Slår produktet op. Hvis API'et fejler, oprettes en fallback-vare.
   Future<OpenFoodFactsProduct> _findProduct(String barcode) async {
     try {
       return await _productService
@@ -227,6 +244,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
   }
 
+  // Sletter en vare og giver mulighed for fortryd ved at gendanne data.
   Future<void> _deleteItemWithUndo(
     BuildContext context,
     _FridgeItem item,
@@ -260,6 +278,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Opdaterer kun de varefelter der blev ændret fra det udvidede kort.
   Future<void> _updateItem(
     BuildContext context,
     String itemId, {
@@ -283,6 +302,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
   }
 
+  // Fælles tekstredigering for navn og kategori.
   Future<void> _editText({
     required BuildContext context,
     required String label,
@@ -306,6 +326,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     await save(newValue);
   }
 
+  // Generisk dialog der returnerer tekst eller null, hvis brugeren annullerer.
   Future<String?> _showInputDialog(
     BuildContext context, {
     required String title,
@@ -345,6 +366,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return result;
   }
 
+  // Lader brugeren vælge en ny udløbsdato for en eksisterende vare.
   Future<void> _pickDate({
     required BuildContext context,
     required String itemId,
@@ -365,6 +387,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     await _updateItem(context, itemId, expiryDate: pickedDate);
   }
 
+  // Omdanner udløbsdato til rød/orange/grøn/grå UI-farve.
   Color _expiryColor(DateTime? date) {
     if (date == null) {
       return Colors.grey;
@@ -377,6 +400,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return Colors.green;
   }
 
+  // Beregner hele dage tilbage fra i dag og ignorerer timer/minutter.
   int _daysLeft(DateTime date) {
     final today = DateTime.now();
     final currentDate = DateTime(today.year, today.month, today.day);
@@ -384,6 +408,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return itemDate.difference(currentDate).inDays;
   }
 
+  // Tekst der vises i det udvidede varekort for udløbsstatus.
   String _expiryStatus(DateTime? date) {
     if (date == null) return 'Ingen dato';
 
@@ -394,16 +419,19 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return '$daysLeft dage tilbage';
   }
 
+  // Formaterer DateTime som dd-mm-yyyy til visning.
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     return '$day-$month-${date.year}';
   }
 
+  // Returnerer visningstekst for datoer der kan være null.
   String _dateText(DateTime? date) {
     return date == null ? 'Ingen dato' : _formatDate(date);
   }
 
+  // Gør Firestore/Firebase-fejl forståelige for brugeren.
   String _errorMessage(Object error) {
     if (error is! FirebaseException) {
       return 'Varerne kunne ikke hentes fra databasen: $error';
@@ -424,6 +452,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
   }
 
+  // Sikker snackbar-helper der bruges efter async-operationer.
   void _showSnackBar(BuildContext context, String message) {
     if (!context.mounted) {
       return;
@@ -433,6 +462,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // Hovedlisten. Den lytter til Firestore og rebuildes når varer ændres.
   Widget _itemsView(BuildContext context) {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _itemService.watchItems(_fridgeOwnerId),
@@ -492,6 +522,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Viser delte køleskabe over listen og gør det muligt at skifte køleskab.
   Widget _sharedFridgeCard(BuildContext context) {
     return StreamBuilder<List<SharedFridge>>(
       stream: _sharedFridgeService.watchSharedFridges(userId),
@@ -541,6 +572,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Genbrugelig tile for ét delt køleskab.
   Widget _sharedFridgeTile(
     BuildContext context, {
     required String title,
@@ -564,6 +596,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Bygger en sorteret liste med unikke kategorier til filter-menuen.
   List<String> _availableCategories(List<_FridgeItem> items) {
     final categories = <String>{};
     for (final item in items) {
@@ -577,6 +610,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
       ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
   }
 
+  // Bruger de valgte filtre og holder resultatet sorteret efter udløbsdato.
   List<_FridgeItem> _filteredAndSortedItems(
     List<_FridgeItem> items, {
     required String? category,
@@ -592,6 +626,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return filtered;
   }
 
+  // Tjekker om én vare matcher det valgte udløbsfilter.
   bool _matchesExpiryFilter(_FridgeItem item) {
     switch (_expiryFilter) {
       case _ExpiryFilter.all:
@@ -607,6 +642,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
   }
 
+  // Tidligste udløbsdato først. Varer uden dato placeres sidst.
   int _compareByExpiryDate(_FridgeItem a, _FridgeItem b) {
     final aDate = a.expiryDate;
     final bDate = b.expiryDate;
@@ -622,6 +658,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return a.name.toLowerCase().compareTo(b.name.toLowerCase());
   }
 
+  // Kompakt bjælke over listen der viser de aktive filtre.
   Widget _filterBar(
     BuildContext context, {
     required List<String> categories,
@@ -675,6 +712,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Læsevenlig tekst for den aktuelle filterkombination.
   String _activeFilterText(String? activeCategory) {
     final parts = <String>[];
     if (_expiryFilter != _ExpiryFilter.all) {
@@ -687,6 +725,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     return parts.isEmpty ? 'Alle varer' : 'Filter: ${parts.join(' · ')}';
   }
 
+  // Bottom sheet hvor brugeren vælger status- og kategorifiltre.
   Future<void> _showFilterSheet(
     BuildContext context, {
     required List<String> categories,
@@ -806,6 +845,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Kategorirække i filter-menuen.
   Widget _categoryFilterTile({
     required String? value,
     required String? selectedValue,
@@ -825,6 +865,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Statusrække i filter-menuen.
   Widget _statusFilterTile({
     required _ExpiryFilter value,
     required _ExpiryFilter groupValue,
@@ -845,6 +886,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Labeltekst for udløbsfilter-enum.
   String _expiryFilterLabel(_ExpiryFilter filter) {
     switch (filter) {
       case _ExpiryFilter.all:
@@ -858,6 +900,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     }
   }
 
+  // Tom visning når køleskabet ikke har nogen varer.
   Widget _emptyView(BuildContext context) {
     return Center(
       child: Padding(
@@ -893,6 +936,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Generisk centreret beskedvisning til fejl.
   Widget _messageView(String message) {
     return Center(
       child: Padding(
@@ -902,6 +946,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Tom visning når filtrene skjuler alle eksisterende varer.
   Widget _filteredEmptyView(BuildContext context) {
     return Center(
       child: Padding(
@@ -933,6 +978,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Varekortet. Det understøtter swipe-to-delete og kan udvides til redigering.
   Widget _productDropdown(BuildContext context, _FridgeItem item) {
     final expiryColor = _expiryColor(item.expiryDate);
 
@@ -1033,6 +1079,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Lille metadata-chip til dato og kategori.
   Widget _miniInfoChip(BuildContext context, IconData icon, String text) {
     final color = Theme.of(context).colorScheme.onSurfaceVariant;
 
@@ -1060,6 +1107,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Farvet udløbsstatus-chip inde i et udvidet varekort.
   Widget _statusChip({required String text, required Color color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -1079,6 +1127,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     );
   }
 
+  // Én redigerbar detalje-række inde i et udvidet varekort.
   Widget _detailRow({
     required String label,
     required String value,
@@ -1120,6 +1169,7 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   }
 
   @override
+  // Bygger siden: appbar, indhold og tilføj-knap.
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -1157,8 +1207,10 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   }
 }
 
+// Udløbsstatus-muligheder brugt af filter-UI'et.
 enum _ExpiryFilter { all, red, orange, green }
 
+// Let lokal model for ét vare-dokument fra Firestore.
 class _FridgeItem {
   const _FridgeItem({
     required this.id,
@@ -1174,6 +1226,7 @@ class _FridgeItem {
   final DateTime? expiryDate;
   final Map<String, dynamic> data;
 
+  // Omdanner et Firestore-dokument til den lokale UI-model.
   factory _FridgeItem.fromDoc(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data();
     return _FridgeItem(
@@ -1185,6 +1238,7 @@ class _FridgeItem {
     );
   }
 
+  // Læser Firestore Timestamp eller DateTime sikkert.
   static DateTime? _readDate(Object? value) {
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;

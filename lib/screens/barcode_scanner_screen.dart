@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+// Skærmen der åbner kameraet og scanner en stregkode.
 class BarcodeScannerScreen extends StatefulWidget {
   const BarcodeScannerScreen({super.key});
 
@@ -9,36 +10,45 @@ class BarcodeScannerScreen extends StatefulWidget {
 }
 
 class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
+  // Controlleren styrer kamera, lommelygte og kameraskift.
   final MobileScannerController _controller = MobileScannerController();
 
+  // Forhindrer at den samme stregkode bliver behandlet flere gange.
   bool _isHandlingBarcode = false;
 
   @override
   void dispose() {
+    // Kamera-controlleren ryddes op, når skærmen lukkes.
     _controller.dispose();
     super.dispose();
   }
 
+  // Kaldes automatisk, når kameraet finder en stregkode.
   void _handleBarcode(BarcodeCapture capture) {
     if (_isHandlingBarcode) {
       return;
     }
 
+    // Hvis scanneren ikke fandt nogen stregkoder, stopper funktionen.
     if (capture.barcodes.isEmpty) {
       return;
     }
 
+    // Henter den første fundne stregkode.
     final barcode = capture.barcodes.first;
     final value = barcode.rawValue;
 
+    // Tomme værdier skal ikke sendes tilbage.
     if (value == null || value.trim().isEmpty) {
       return;
     }
 
+    // Sender stregkoden tilbage til den skærm, der åbnede scanneren.
     _isHandlingBarcode = true;
     Navigator.pop(context, value.trim());
   }
 
+  // Giver brugeren mulighed for at skrive stregkoden manuelt.
   Future<void> _enterBarcodeManually() async {
     final controller = TextEditingController();
     final barcode = await showDialog<String>(
@@ -70,24 +80,29 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     );
     controller.dispose();
 
+    // Hvis brugeren annullerer eller skriver tom tekst, sker der ingenting.
     if (barcode == null || barcode.isEmpty || !mounted) {
       return;
     }
 
+    // Sender den manuelt skrevne stregkode tilbage.
     Navigator.pop(context, barcode);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Scaffold viser appbar og kamera-indholdet.
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan stregkode'),
         actions: [
+          // Knap til at tænde og slukke lommelygten.
           IconButton(
             onPressed: _controller.toggleTorch,
             tooltip: 'Lommelygte',
             icon: const Icon(Icons.flashlight_on),
           ),
+          // Knap til at skifte mellem forside- og bagsidekamera.
           IconButton(
             onPressed: _controller.switchCamera,
             tooltip: 'Skift kamera',
@@ -98,7 +113,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
+          // Selve kamera-scanneren.
           MobileScanner(controller: _controller, onDetect: _handleBarcode),
+          // Den hvide ramme viser hvor brugeren skal holde stregkoden.
           IgnorePointer(
             child: Center(
               child: Container(
@@ -111,6 +128,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
               ),
             ),
           ),
+          // Nederste tekstboks med instruktion og manuel indtastning.
           Positioned(
             left: 24,
             right: 24,
