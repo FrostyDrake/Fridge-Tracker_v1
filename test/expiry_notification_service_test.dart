@@ -38,6 +38,23 @@ void main() {
       expect(plans.single.body, 'Kylling udl\u00f8ber i morgen.');
     });
 
+    test('schedules items expiring today as immediate reminders', () {
+      final plans = ExpiryNotificationService.buildReminderPlans(
+        now: DateTime(2026, 6, 9, 10),
+        items: [
+          ExpiryNotificationItem(
+            id: 'milk-today',
+            name: 'M\u00e6lk',
+            expiryDate: DateTime(2026, 6, 9, 22),
+          ),
+        ],
+      );
+
+      expect(plans, hasLength(1));
+      expect(plans.single.scheduledAt, DateTime(2026, 6, 9, 10, 1));
+      expect(plans.single.body, 'M\u00e6lk udl\u00f8ber i dag.');
+    });
+
     test('skips expired items', () {
       final plans = ExpiryNotificationService.buildReminderPlans(
         now: DateTime(2026, 6, 9, 10),
@@ -51,6 +68,29 @@ void main() {
       );
 
       expect(plans, isEmpty);
+    });
+
+    test('sorts reminder plans by scheduled time', () {
+      final plans = ExpiryNotificationService.buildReminderPlans(
+        now: DateTime(2026, 6, 9, 10),
+        items: [
+          ExpiryNotificationItem(
+            id: 'cheese-1',
+            name: 'Ost',
+            expiryDate: DateTime(2026, 6, 20),
+          ),
+          ExpiryNotificationItem(
+            id: 'fish-1',
+            name: 'Fisk',
+            expiryDate: DateTime(2026, 6, 11),
+          ),
+        ],
+      );
+
+      expect(plans.map((plan) => plan.payload), [
+        'fridge_item:fish-1',
+        'fridge_item:cheese-1',
+      ]);
     });
 
     test('uses stable notification ids for same item id', () {

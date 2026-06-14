@@ -17,4 +17,25 @@ void main() {
     expect(find.text('Adgangskode'), findsOneWidget);
     expect(find.text('Log ind'), findsOneWidget);
   });
+
+  testWidgets('validates login form before calling Firebase', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MyApp(
+        firebaseInitialization: Future.value(),
+        authStateChanges: Stream.value(null),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Log ind'));
+    await tester.pump();
+
+    expect(find.text('Ugyldig emailadresse'), findsOneWidget);
+    expect(
+      find.text('Adgangskoden skal v\u00e6re mindst 6 tegn'),
+      findsOneWidget,
+    );
+  });
 }

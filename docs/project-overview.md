@@ -7,8 +7,9 @@ madspild ved at give et løbende overblik over køleskabets indhold. Brugeren ka
 scanne varer med kameraet, bekræfte det fundne produkt og gemme varen med en
 intelligent udløbsdato.
 
-Appen sender notifikationer, når varer nærmer sig udløb, og kan senere foreslå
-opskrifter baseret på de varer, der bør bruges først.
+Appen foreslår opskrifter baseret på varer, der bør bruges først, og har et
+fundament for notifikationer. Fuld server-push er markeret som en senere version
+i kravspecifikationen.
 
 ## Problem
 
@@ -64,7 +65,6 @@ en separat backend i Sprint 1.
 - Automatisk udløbsdato fra lokal JSON-database
 - Manuel tilføjelse af vare
 - Køleskabsoversigt med farvekodning
-- Push-notifikation når en vare udløber inden for 2 dage
 - Lokal datalagring mellem sessioner
 - Sikker login og oprettelse af konto
 
@@ -75,14 +75,18 @@ en separat backend i Sprint 1.
 - Redigering af eksisterende vare
 - Opskriftsforslag via eksternt API
 - Cloud-backup og synkronisering
+- Delt køleskab med godkendte husstandsmedlemmer
 
 ### Could Have
 
-- Delt køleskab med husstandsmedlemmer
 - Madspildsstatistik over tid
 - Indkøbsliste baseret på varer der snart mangler
 - Filtrering efter kategori eller udløbsstatus
 - AI-baserede madplaner
+
+### Senere version
+
+- Udløbsnotifikationer med server-push og direkte navigation til varen
 
 ### Won't Have denne gang
 
@@ -95,13 +99,13 @@ en separat backend i Sprint 1.
 | -- | ---------- | --------- | ------ |
 | US01 | Som bruger vil jeg scanne en vare med kameraet, så den automatisk tilføjes | Must | 8 |
 | US02 | Som bruger vil jeg se alle varer i køleskabet i én oversigt | Must | 3 |
-| US03 | Som bruger vil jeg modtage en notifikation, når en vare udløber inden for 2 dage | Must | 5 |
+| US03 | Som bruger vil jeg modtage en notifikation, når en vare udløber inden for 2 dage | Senere | 5 |
 | US04 | Som bruger vil jeg oprette en konto og logge ind sikkert | Must | 5 |
 | US05 | Som bruger vil jeg manuelt tilføje en vare med navn og udløbsdato | Should | 3 |
 | US06 | Som bruger vil jeg se varer sorteret efter udløbsdato | Should | 2 |
 | US07 | Som bruger vil jeg få opskriftsforslag baseret på varer, der snart udløber | Should | 8 |
 | US08 | Som bruger vil jeg slette en vare fra køleskabet | Should | 2 |
-| US09 | Som bruger vil jeg dele mit køleskab med mine husstandsmedlemmer | Could | 8 |
+| US09 | Som bruger vil jeg dele mit køleskab med mine husstandsmedlemmer | Should | 8 |
 | US10 | Som bruger vil jeg se statistik over mit madspild over tid | Could | 5 |
 
 ## Tekniske risici

@@ -40,6 +40,18 @@ void main() {
       );
     });
 
+    test('falls back to the first useful product word', () {
+      final service = RecipeService();
+
+      expect(
+        service.ingredientFromFridgeItem(
+          name: 'Rema mini organic squash',
+          category: 'Ukendt',
+        ),
+        'squash',
+      );
+    });
+
     test('fetches recipes by ingredient', () async {
       final service = RecipeService(
         client: MockClient((request) async {
@@ -70,6 +82,29 @@ void main() {
       expect(recipes.single.thumbnailUrl, 'https://example.com/meal.jpg');
     });
 
+    test('filters incomplete recipe rows and respects the limit', () async {
+      final service = RecipeService(
+        client: MockClient((request) async {
+          return http.Response(
+            jsonEncode({
+              'meals': [
+                {'idMeal': '1', 'strMeal': 'Tomato Pasta'},
+                {'idMeal': '2'},
+                {'strMeal': 'No id'},
+                {'idMeal': '3', 'strMeal': 'Tomato Soup'},
+                {'idMeal': '4', 'strMeal': 'Tomato Salad'},
+              ],
+            }),
+            200,
+          );
+        }),
+      );
+
+      final recipes = await service.findByIngredient('tomato', limit: 2);
+
+      expect(recipes.map((recipe) => recipe.id), ['1', '3']);
+    });
+
     test('returns empty list when ingredient has no meals', () async {
       final service = RecipeService(
         client: MockClient((request) async {
@@ -80,6 +115,25 @@ void main() {
       final recipes = await service.findByIngredient('granola');
 
       expect(recipes, isEmpty);
+    });
+
+    test('throws a readable exception when recipe search fails', () async {
+      final service = RecipeService(
+        client: MockClient((request) async {
+          return http.Response('Server error', 500);
+        }),
+      );
+
+      await expectLater(
+        service.findByIngredient('milk'),
+        throwsA(
+          isA<RecipeLookupException>().having(
+            (error) => error.message,
+            'message',
+            contains('status 500'),
+          ),
+        ),
+      );
     });
 
     test('fetches recipe details', () async {
@@ -124,6 +178,25 @@ void main() {
       expect(details.instructions, 'Cook everything together.');
       expect(details.sourceUrl, 'https://example.com/source');
       expect(details.youtubeUrl, 'https://example.com/video');
+    });
+
+    test('throws when recipe details are missing', () async {
+      final service = RecipeService(
+        client: MockClient((request) async {
+          return http.Response(jsonEncode({'meals': null}), 200);
+        }),
+      );
+
+      await expectLater(
+        service.findDetails('missing'),
+        throwsA(
+          isA<RecipeLookupException>().having(
+            (error) => error.message,
+            'message',
+            'Recipe was not found',
+          ),
+        ),
+      );
     });
   });
 }

@@ -60,7 +60,7 @@ hinanden unødigt.
 | FK02 | Systemet skal vise alle varer med navn, kategori og udløbsdato, farvekodet efter udløbsstatus |
 | FK03 | Systemet skal give mulighed for manuel tilføjelse via formular; tomme felter accepteres ikke |
 | FK04 | Systemet skal give mulighed for sletning af vare med 5 sekunders fortrydmulighed |
-| FK05 | Systemet skal sende push-notifikation med varenavn og udløbsdato, når en vare udløber inden for 2 dage |
+| FK05 | Udløbsnotifikationer er planlagt som senere version og er ikke et godkendelseskrav for den nuværende version |
 
 ## Ikke-funktionelle krav
 
@@ -86,19 +86,18 @@ hinanden unødigt.
 ### US02 - Køleskabsoversigt
 
 - Alle varer vises efter login.
-- Rød markering bruges, når der er 1-2 dage tilbage.
-- Gul markering bruges, når der er 3-5 dage tilbage.
-- Grøn markering bruges, når der er 6 eller flere dage tilbage.
+- Rød markering bruges, når der er 3 dage eller mindre tilbage.
+- Orange markering bruges, når der er 4-7 dage tilbage.
+- Grøn markering bruges, når der er mere end 7 dage tilbage.
 - Tom oversigt viser "Dit køleskab er tomt - tilføj din første vare".
 - Oversigten opdateres i realtid uden manuel genindlæsning.
 
-### US03 - Notifikation
+### US03 - Notifikation (senere version)
 
-- Notifikation sendes præcis 2 dage før udløb.
-- Notifikationen indeholder varenavn og udløbsdato.
-- Der sendes ingen notifikation for varer med mere end 2 dage tilbage.
-- Tryk på notifikationen åbner appen og viser varen.
-- Hvis notifikationer er slået fra, sendes ingen notifikation, men rød markering vises stadig i oversigten.
+- Notifikationskriterierne er dokumenteret som senere version i kravspecifikationen.
+- Nuværende app har service/UI-fundament for lokale reminders og FCM-token.
+- Fuld server-push kræver Cloud Function eller anden sikker backend.
+- Rød markering i oversigten virker uafhængigt af notifikationer.
 
 ## Scrum-opsætning
 

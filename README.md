@@ -11,9 +11,10 @@ overblik.
 
 ## Kerneidé
 
-I Sprint 1 kan brugeren tilføje varer manuelt. Senere skal appen understøtte
-kamerascanning, stregkodeopslag via Open Food Facts, intelligente
-standardudløbsdatoer, udløbsnotifikationer og opskriftsforslag.
+Appen understøtter login, køleskabsoversigt, manuel tilføjelse, redigering,
+slet/fortryd, kamerascanning, stregkodeopslag via Open Food Facts, lokale
+standardudløbsdatoer, opskriftsforslag og et fundament for delt køleskab og
+notifikationer.
 
 ## Team
 
@@ -30,7 +31,7 @@ standardudløbsdatoer, udløbsnotifikationer og opskriftsforslag.
 | App | Flutter / Dart | Crossplatform-app til Android og iOS |
 | Database | Firebase Firestore | Realtidssynkronisering og offline cache |
 | Auth | Firebase Authentication | Sikker login med email/adgangskode |
-| Push-notifikationer | Firebase Cloud Messaging | Push-notifikationer til Android og iOS |
+| Notifikationsfundament | Lokale notifikationer + Firebase Cloud Messaging | Reminders lokalt og FCM-token til senere server-push |
 | Billedgenkendelse | ML Kit on-device | Objektgenkendelse uden netværkskrav |
 | Produktdata | Open Food Facts API | Gratis produktdatabase med dagligvarer |
 | Standardudløbsdatoer | Lokal JSON-database | Hurtigt opslag for almindelige fødevarer |
@@ -91,13 +92,13 @@ households
 
 | Farve | Betydning |
 | ----- | --------- |
-| Rød | Udløber om 1-2 dage |
-| Gul | Udløber om 3-5 dage |
-| Grøn | Mere end 5 dage tilbage |
+| Rød | Udløber om 3 dage eller mindre |
+| Orange | Udløber om 4-7 dage |
+| Grøn | Mere end 7 dage tilbage |
 
 ## Dokumentation
 
 - [Projektoverblik](docs/project-overview.md)
 - [Sprint 1-backlog](docs/sprint-1.md)
-- [Andrei dag 1-5](docs/andrei-day-1-5.md)
+- [Andrei sprint 1](docs/andrei-sprint-1.md)
 - [Andrei sprint 2](docs/andrei-sprint-2.md)
