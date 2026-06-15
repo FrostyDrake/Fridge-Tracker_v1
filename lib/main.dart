@@ -18,16 +18,25 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  await ExpiryNotificationService.instance.initialize();
-  await PushNotificationService.instance.initialize();
   runApp(MyApp());
 }
 
-Future<void> _initializeFirebase() {
-  return Firebase.initializeApp(
+Future<void> _initializeFirebase() async {
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  unawaited(_startNotificationServices());
+}
+
+Future<void> _startNotificationServices() async {
+  try {
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    await ExpiryNotificationService.instance.initialize();
+    await PushNotificationService.instance.initialize();
+  } catch (error) {
+    debugPrint('Notifikationer kunne ikke starte: $error');
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -124,9 +133,17 @@ class AuthGate extends StatelessWidget {
           return const LoginScreen();
         }
 
-        unawaited(PushNotificationService.instance.registerForUser(user.uid));
+        unawaited(_registerPushForUser(user.uid));
         return FridgeOverviewScreen(userId: user.uid);
       },
     );
+  }
+}
+
+Future<void> _registerPushForUser(String userId) async {
+  try {
+    await PushNotificationService.instance.registerForUser(userId);
+  } catch (error) {
+    debugPrint('Push kunne ikke registreres: $error');
   }
 }
