@@ -96,6 +96,31 @@ households
 | Orange | Udløber om 4-7 dage |
 | Grøn | Mere end 7 dage tilbage |
 
+## Kravspecifikation
+
+Projektet tager udgangspunkt i kravspecifikationen
+`Fridge_Tracker_Kravspecifikation.docx - Documente Google.pdf`.
+
+Kravspecifikationen beskriver problemformulering, målgruppe, use cases,
+funktionelle krav, ikke-funktionelle krav, designkrav og datamodel. Den aktuelle
+version af appen dækker login, køleskabsoversigt, manuel tilføjelse,
+scanning/OCR, Open Food Facts-opslag, standardudløb fra lokal JSON,
+opskrifter, slet/fortryd og et fundament for delt køleskab.
+
+Udløbsnotifikationer er markeret som en senere version i kravspecifikationen.
+Repoet indeholder derfor et notifikations- og FCM-tokenfundament, men ikke en
+fuld server-push-løsning.
+
+## Estimeret tidsplan - 5 uger
+
+| Uge | Fokus | Arbejde | Resultat |
+| --- | ----- | ------- | -------- |
+| Uge 1 | Kravspecifikation og planlægning | Problemformulering, målgruppe, use cases, datamodel, MoSCoW-prioritering og teknologivalg | Grundlag for projektet og kravspecifikation |
+| Uge 2 | Firebase og login | Firebase setup, Authentication, login/opret konto/logout, Firestore-struktur og security rules | Brugere kan oprette konto, logge ind og have egne data |
+| Uge 3 | Køleskabsfunktioner | Køleskabsoversigt, manuel tilføjelse, redigering, sletning med fortryd, farvekodning og sortering | Appen har fungerende CRUD-flow for varer |
+| Uge 4 | Scanning og smarte funktioner | Barcode-scanning, OCR, Open Food Facts, standardudløb fra JSON, opskriftsforslag og delt køleskab foundation | Appen kan foreslå udløbsdatoer og opskrifter baseret på varer |
+| Uge 5 | Test, dokumentation og polish | Flere unit/widget tests, opdatering af Andrei Sprint 1/2 docs, kravspec-alignment, analyse/test/build og praktisk platformstest | Projektet er mere stabilt, dokumenteret og klarere til aflevering/demo |
+
 ## Dokumentation
 
 - [Projektoverblik](docs/project-overview.md)
