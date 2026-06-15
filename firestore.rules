@@ -10,30 +10,31 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == userId;
     }
 
-    function hasSharedFridgeAccess(ownerUserId) {
-      return signedIn()
-      && exists(/databases/$(database)/documents/users/$(request.auth.uid)/sharedFridges/$(ownerUserId));
-    }
-
-    function canUseFridge(ownerUserId) {
-      return ownsUserDocument(ownerUserId) || hasSharedFridgeAccess(ownerUserId);
-    }
-
     function validUserDocument() {
       return request.resource.data.keys().hasOnly([
         'email',
-        'emailLower',
         'createdAt',
         'updatedAt',
+        'householdId',
       ])
       && request.resource.data.email is string
       && request.resource.data.email.size() > 0
-      && (
-        !('emailLower' in request.resource.data)
-        || request.resource.data.emailLower is string
-      )
       && request.resource.data.createdAt is timestamp
-      && request.resource.data.updatedAt is timestamp;
+      && request.resource.data.updatedAt is timestamp
+      && request.resource.data.householdId is string
+      && (request.resource.data.householdId == ""
+      || exists(/databases/$(database)/documents/households/$(request.resource.data.householdId)/members/$(request.auth.uid)));
+    }
+ 
+    function validUserDocumentUpdate() {
+      return validUserDocument()
+      && !(
+      request.resource.data.householdId == ""
+      && resource.data.householdId != ""
+      && exists(
+        /databases/$(database)/documents/households/$(resource.data.householdId)/members/$(request.auth.uid)
+      )
+    );
     }
 
     function validFridgeDocument() {
@@ -44,11 +45,52 @@ service cloud.firestore {
       ])
       && request.resource.data.name is string
       && request.resource.data.name.size() > 0
+      && request.resource.data.name.size() <= 20
       && request.resource.data.createdAt is timestamp
       && request.resource.data.updatedAt is timestamp;
     }
 
-    function validFridgeItem() {
+    function validFridgeItemBase(data) {
+      return data.keys().hasOnly([
+        'name',
+        'category',
+        'addedDate',
+        'expiryDate',
+        'source',
+        'imageUrl',
+      ])
+      && data.name is string
+      && data.name.size() > 0
+      && data.name.size() <= 20
+      && data.category is string
+      && data.category.size() in [
+      	'krydderi og urter',
+      	'kød',
+      	'fjerkræ',
+      	'fisk og skaldyr',
+      	'mejeri',
+      	'grøntsager',
+      	'frugt',
+      	'drikkevare',
+      	'korn',
+      	'bælgfrugter',
+      	'nødder og frø',
+      	'fedtstoffer og olier',
+      	'slik og sukker',
+      ]
+      && data.expiryDate is timestamp
+      && (
+        !('source' in data)
+        || data.source in ['manual', 'scan', 'barcode']
+      )
+      && (
+        !('imageUrl' in data)
+        || data.imageUrl == null
+        || data.imageUrl is string
+      );
+    }
+
+    function validFridgeItemCreate() {
       return request.resource.data.keys().hasOnly([
         'name',
         'category',
@@ -57,104 +99,142 @@ service cloud.firestore {
         'source',
         'imageUrl',
       ])
-      && request.resource.data.name is string
-      && request.resource.data.name.size() > 0
-      && request.resource.data.category is string
-      && request.resource.data.category.size() > 0
+      && validFridgeItemBase(request.resource.data)
       && request.resource.data.addedDate is timestamp
-      && request.resource.data.expiryDate is timestamp
-      && request.resource.data.source is string
-      && request.resource.data.source in ['manual', 'scan', 'barcode']
-      && (
-        !('imageUrl' in request.resource.data)
-        || request.resource.data.imageUrl == null
-        || request.resource.data.imageUrl is string
-      );
+      && 'source' in request.resource.data;
     }
 
-    function validSharedFridgeDocument(ownerUserId) {
-      return request.resource.data.keys().hasOnly([
-        'ownerId',
-        'ownerEmail',
-        'fridgeName',
-        'sharedAt',
-      ])
-      && request.resource.data.ownerId == ownerUserId
-      && request.resource.data.ownerEmail is string
-      && request.resource.data.fridgeName is string
-      && request.resource.data.sharedAt is timestamp;
-    }
-
-    function validMemberDocument(memberUserId) {
-      return request.resource.data.keys().hasOnly([
-        'uid',
-        'email',
-        'sharedAt',
-      ])
-      && request.resource.data.uid == memberUserId
-      && request.resource.data.email is string
-      && request.resource.data.email.size() > 0
-      && request.resource.data.sharedAt is timestamp;
-    }
-
-    function validFcmTokenDocument() {
-      return request.resource.data.keys().hasOnly([
-        'token',
-        'platform',
-        'updatedAt',
-      ])
-      && request.resource.data.token is string
-      && request.resource.data.token.size() > 0
-      && request.resource.data.platform is string
-      && request.resource.data.platform in [
-        'android',
-        'ios',
-        'web',
-        'macos',
-        'windows',
-        'linux',
-        'fuchsia',
-      ]
-      && request.resource.data.updatedAt is timestamp;
+    function validFridgeItemUpdate() {
+      return validFridgeItemBase(request.resource.data)
+      && resource.data.addedDate == request.resource.data.addedDate;
     }
 
     match /users/{userId} {
-      allow read: if signedIn();
-      allow create, update: if ownsUserDocument(userId) && validUserDocument();
+      allow read: if ownsUserDocument(userId);
+      allow create: if ownsUserDocument(userId) && validUserDocument();
+      allow update: if ownsUserDocument(userId) && validUserDocumentUpdate();
       allow delete: if false;
 
-      match /fcmTokens/{tokenId} {
-        allow read, delete: if ownsUserDocument(userId);
-        allow create, update: if ownsUserDocument(userId)
-          && validFcmTokenDocument();
-      }
-
-      match /sharedFridges/{ownerUserId} {
-        allow read: if ownsUserDocument(userId);
-        allow create, update: if signedIn()
-          && request.auth.uid == ownerUserId
-          && validSharedFridgeDocument(ownerUserId);
-        allow delete: if ownsUserDocument(userId) || ownsUserDocument(ownerUserId);
-      }
-
       match /fridges/{fridgeId} {
-        allow read: if canUseFridge(userId);
+        allow read: if ownsUserDocument(userId);
         allow create, update: if ownsUserDocument(userId) && validFridgeDocument();
         allow delete: if false;
 
         match /items/{itemId} {
-          allow read: if canUseFridge(userId);
-          allow create, update: if canUseFridge(userId) && validFridgeItem();
-          allow delete: if canUseFridge(userId);
-        }
-
-        match /members/{memberUserId} {
-          allow read: if canUseFridge(userId);
-          allow create, update: if ownsUserDocument(userId)
-            && validMemberDocument(memberUserId);
+          allow read: if ownsUserDocument(userId);
+          allow create: if ownsUserDocument(userId) && validFridgeItemCreate();
+          allow update: if ownsUserDocument(userId) && validFridgeItemUpdate();
           allow delete: if ownsUserDocument(userId);
         }
       }
+    }
+ 
+    function notMemberOfHousehold() {
+     return signedIn()
+     && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.householdId == "";
+    }
+    
+    function validHouseholdDocumentBase() {
+     return request.resource.data.keys().hasOnly([
+     	'name',
+     	'createdAt',
+     	'ownerId'
+     ])
+     && request.resource.data.name is string
+     && request.resource.data.name.size() > 0
+     && request.resource.data.name.size() <= 20
+     && request.resource.data.createdAt is string
+     && request.resource.data.createdAt.size() > 0
+     && request.resource.data.createdAt.size() <= 10
+     && request.resource.data.ownerId is string;
+    }
+    
+    function validHouseholdDocumentCreate() {
+     return validHouseholdDocumentBase()
+     && request.resource.data.ownerId == request.auth.uid
+     && get(/databases/$(database)/documents/users/$(request.resource.data.ownerId)).data.householdId == "";
+    }
+    
+    function validHouseholdDocumentUpdate(householdId) {
+			return validHouseholdDocumentBase()
+      && get(/databases/$(database)/documents/users/$(request.resource.data.ownerId)).data.householdId == householdId;
+    }
+ 
+    function roleOwner() { return "owner"; }
+		function roleAdmin() { return "admin"; }
+		function roleMember() { return "member"; }
+		function roleAll() { return [roleMember(), roleAdmin(), roleOwner()]; }
+ 		
+    function roleRequired(householdId, roles) {
+     return get(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid)).data.role in roles
+    }
+ 
+ 		function validMemberDocumentBase(memberId) {
+     return request.resource.data.keys().hasOnly([
+     	'role',
+     	'email',
+     ])
+     && request.resource.data.role is string
+     && request.resource.data.role in [roleMember(), roleAdmin(), roleOwner()]
+     && request.resource.data.email is string
+     && request.resource.data.email.size() > 0
+     && request.resource.data.email == get(/databases/$(database)/documents/users/$(memberId)).data.email;
+    }
+    
+    function validFirstOwnerMemberDocument(householdId, memberId) {
+     let ownerId = get(/databases/$(database)/documents/households/$(householdId)).data.ownerId;
+    
+     return signedIn()
+     && validMemberDocumentBase(memberId)
+     && memberUserHasHouseholdId(memberId, "")
+     && ownerId == memberId
+     && ownerId == request.auth.uid
+     && request.resource.data.role == roleOwner()
+     && !exists(/databases/$(database)/documents/households/$(householdId)/members/$(memberId));
+    }
+ 
+    function validMemberAndAssignedRoleDocument(roles, memberId, requiredValue) {
+     return validMemberDocumentBase(memberId)
+     && request.resource.data.role in roles
+     && memberUserHasHouseholdId(memberId, requiredValue);
+    }
+    
+    function memberUserHasHouseholdId(memberId, requiredValue) {
+     return get(/databases/$(database)/documents/users/$(memberId)).data.householdId == requiredValue;
+    }
+    
+    function notDefaultFridgeBeingDeleted(fridgeId) {
+    	return fridgeId != 'default'
+    }
+    
+    match /households/{householdId} {
+     allow read: if roleRequired(householdId, roleAll());
+     allow create: if notMemberOfHousehold() && validHouseholdDocumentCreate();
+     allow update, delete: if roleRequired(householdId, [roleOwner()]) && validHouseholdDocumentUpdate(householdId);
+     
+			match /members/{memberId} {
+      	allow read: if roleRequired(householdId, roleAll());
+      	allow create: if roleRequired(householdId, [roleOwner(), roleAdmin()])
+      		&& validMemberAndAssignedRoleDocument([roleMember()], memberId, "") || validFirstOwnerMemberDocument(householdId, memberId);
+				allow update: if roleRequired(householdId, [roleOwner()])
+      		&& validMemberAndAssignedRoleDocument([roleAdmin(), roleMember()], memberId, householdId);
+      	allow delete: if request.auth.uid == memberId && resource.data.role != roleOwner()
+      		|| roleRequired(householdId, [roleAdmin()]) && resource.data.role == roleMember()
+        	|| roleRequired(householdId, roleOwner()) && resource.data.role in [roleMember(), roleAdmin()];
+     	}
+			
+      match /fridges/{fridgeId} {
+     		allow read: if roleRequired(householdId, roleAll());
+				allow create, update: if roleRequired(householdId, [roleOwner(), roleAdmin()]) && validFridgeDocument();
+      	allow delete: if false;
+      
+      	match /items/{itemId} {
+      		allow read: if roleRequired(householdId, roleAll());
+          allow create: if roleRequired(householdId, roleAll()) && validFridgeItemCreate();
+          allow update: if roleRequired(householdId, roleAll()) && validFridgeItemUpdate();
+          allow delete: if roleRequired(householdId, roleAll());
+        }
+     	}
     }
   }
 }
