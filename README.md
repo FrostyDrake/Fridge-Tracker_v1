@@ -100,6 +100,8 @@ households
 
 Projektet tager udgangspunkt i kravspecifikationen
 `Fridge_Tracker_Kravspecifikation.docx - Documente Google.pdf`.
+PDF'en ligger i repoets `docs`-mappe:
+[Kravspecifikation](docs/Fridge_Tracker_Kravspecifikation.docx%20-%20Documente%20Google.pdf).
 
 Kravspecifikationen beskriver problemformulering, målgruppe, use cases,
 funktionelle krav, ikke-funktionelle krav, designkrav og datamodel. Den aktuelle
@@ -123,6 +125,7 @@ fuld server-push-løsning.
 
 ## Dokumentation
 
+- [Kravspecifikation](docs/Fridge_Tracker_Kravspecifikation.docx%20-%20Documente%20Google.pdf)
 - [Projektoverblik](docs/project-overview.md)
 - [Sprint 1-backlog](docs/sprint-1.md)
 - [Andrei sprint 1](docs/andrei-sprint-1.md)
