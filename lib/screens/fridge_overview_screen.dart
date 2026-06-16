@@ -335,35 +335,16 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
     String? hintText,
     TextInputType? keyboardType,
   }) async {
-    final controller = TextEditingController(text: value);
-    final result = await showDialog<String>(
+    return showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: keyboardType,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hintText,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Annuller'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('Gem'),
-          ),
-        ],
+      builder: (_) => _TextEditDialog(
+        title: title,
+        label: label,
+        value: value,
+        hintText: hintText,
+        keyboardType: keyboardType,
       ),
     );
-    controller.dispose();
-    return result;
   }
 
   // Lader brugeren vælge en ny udløbsdato for en eksisterende vare.
@@ -464,6 +445,8 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
 
   // Hovedlisten. Den lytter til Firestore og rebuildes når varer ændres.
   Widget _itemsView(BuildContext context) {
+    final pageContext = context;
+
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _itemService.watchItems(_fridgeOwnerId),
       builder: (context, snapshot) {
@@ -512,7 +495,11 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
                       itemCount: items.length,
                       separatorBuilder: (_, index) => const SizedBox(height: 8),
                       itemBuilder: (context, index) {
-                        return _productDropdown(context, items[index]);
+                        return _productDropdown(
+                          context,
+                          items[index],
+                          actionContext: pageContext,
+                        );
                       },
                     ),
             ),
@@ -979,7 +966,11 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
   }
 
   // Varekortet. Det understøtter swipe-to-delete og kan udvides til redigering.
-  Widget _productDropdown(BuildContext context, _FridgeItem item) {
+  Widget _productDropdown(
+    BuildContext context,
+    _FridgeItem item, {
+    required BuildContext actionContext,
+  }) {
     final expiryColor = _expiryColor(item.expiryDate);
 
     return Dismissible(
@@ -1048,27 +1039,29 @@ class _FridgeOverviewScreenState extends State<FridgeOverviewScreen> {
               label: 'Navn',
               value: item.name,
               onEdit: () => _editText(
-                context: context,
+                context: actionContext,
                 label: 'navn',
                 value: item.name,
-                save: (value) => _updateItem(context, item.id, name: value),
+                save: (value) =>
+                    _updateItem(actionContext, item.id, name: value),
               ),
             ),
             _detailRow(
               label: 'Kategori',
               value: item.category,
               onEdit: () => _editText(
-                context: context,
+                context: actionContext,
                 label: 'kategori',
                 value: item.category,
-                save: (value) => _updateItem(context, item.id, category: value),
+                save: (value) =>
+                    _updateItem(actionContext, item.id, category: value),
               ),
             ),
             _detailRow(
               label: 'Udløbsdato',
               value: _dateText(item.expiryDate),
               onEdit: () => _pickDate(
-                context: context,
+                context: actionContext,
                 itemId: item.id,
                 value: item.expiryDate,
               ),
@@ -1243,5 +1236,69 @@ class _FridgeItem {
     if (value is Timestamp) return value.toDate();
     if (value is DateTime) return value;
     return null;
+  }
+}
+
+// Dialog til tekstredigering. Controlleren bor i dialogens egen lifecycle,
+// så den ikke bliver disposed mens Android stadig lukker dialogen.
+class _TextEditDialog extends StatefulWidget {
+  const _TextEditDialog({
+    required this.title,
+    required this.label,
+    required this.value,
+    this.hintText,
+    this.keyboardType,
+  });
+
+  final String title;
+  final String label;
+  final String value;
+  final String? hintText;
+  final TextInputType? keyboardType;
+
+  @override
+  State<_TextEditDialog> createState() => _TextEditDialogState();
+}
+
+class _TextEditDialogState extends State<_TextEditDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: widget.keyboardType,
+        decoration: InputDecoration(
+          labelText: widget.label,
+          hintText: widget.hintText,
+          border: const OutlineInputBorder(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Annuller'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Gem'),
+        ),
+      ],
+    );
   }
 }

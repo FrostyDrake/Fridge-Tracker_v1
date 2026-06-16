@@ -15,14 +15,14 @@ void main() {
       expect(rules, contains('hasSharedFridgeAccess(ownerUserId)'));
       expect(rules, contains('canUseFridge(userId)'));
       expect(rules, contains('match /items/{itemId}'));
-      expect(
-        rules,
-        contains('allow create, update: if canUseFridge(userId)'),
-      );
+      expect(rules, contains('allow create: if canUseFridge(userId)'));
+      expect(rules, contains('allow update: if canUseFridge(userId)'));
     });
 
     test('validates fridge items and known item sources', () {
-      expect(rules, contains('validFridgeItem()'));
+      expect(rules, contains('validFridgeItemBase'));
+      expect(rules, contains('validFridgeItemCreate'));
+      expect(rules, contains('validFridgeItemUpdate'));
       expect(rules, contains("'name'"));
       expect(rules, contains("'category'"));
       expect(rules, contains("'expiryDate'"));
